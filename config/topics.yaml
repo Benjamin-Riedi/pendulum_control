@@ -1,5 +1,6 @@
 topics:
   gelsight:
+    rgb: "/gelsight/rgb"
     angles: "/gelsight/angles"
     anglesD: "/gelsight/anglesD"
   vicon:
