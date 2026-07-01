@@ -1,0 +1,10 @@
+<launch>
+    <rosparam command="load" file="$(find my_pkg)/config/topics.yaml" />
+    <include file="$(find gelsight_ros)/launch/gelsight.launch" />
+    <include file="$(find ethercat_ros_configurator)/launch/test_motor_start.launch" />
+
+    <param name="matrices_path" value="/matrices" />
+    <node pkg="pendulum_control" type="control.py" name="pendulum_control_node" output="screen">
+        <param name="calculate_K" value="false" />
+    </node>
+</launch>

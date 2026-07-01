@@ -1,0 +1,28 @@
+topics:
+  gelsight:
+    angles: "/gelsight/angles"
+    anglesD: "/gelsight/anglesD"
+  vicon:
+    angles: "/vicon/angles"
+    anglesD: "/vicon/anglesD"
+# these might change depending on the vicon setup
+    state: "/vicon/benjamin_v2/Root"
+    world: "/vicon/benjamin_v2/World"
+  
+  position:
+    top: "/top/x"
+    bottom: "/bottom/x"
+  velocity:
+    top: "/top/xD"
+    bottom: "/bottom/xD"
+  command:
+    top: "/top/v_sp"
+    bottom: "/bottom/v_sp"
+  
+  # the following are set by the ethercat_ros_configurator package. Could cause problems if setup.yaml/these values are changed
+  Maxon_Motor_bottom:
+    command: "/ethercat_master/Maxon_Motor_bottom/command"
+    reading: "/ethercat_master/Maxon_Motor_bottom/reading"
+  Maxon_Motor_top:
+    command: "/ethercat_master/Maxon_Motor_top/command"
+    reading: "/ethercat_master/Maxon_Motor_top/reading"
