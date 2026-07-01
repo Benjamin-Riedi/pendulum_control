@@ -11,15 +11,11 @@ i'll try to write all topics that I need:
 /gelsight/rgb
 
 # not sure yet if i'll use separate angles or just /gelsight/angles with the Angles2d msg as already implemented (also maybe add a stamp). I'll have to figure out how to get the msg to other packages.
-/gelsight/phi
-/gelsight/phiD
-/gelsight/theta
-/gelsight/thetaD
+/gelsight/angles
+/gelsight/anglesD
 
-/vicon/phi
-/vicon/phiD
-/vicon/theta
-/vicon/thetaD
+/vicon/angles
+/vicon/anglesD
 
 /top/x
 /top/xD
