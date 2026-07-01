@@ -1,5 +1,3 @@
-from unicodedata import normalize
-
 import control
 import rospy
 import numpy as np
@@ -11,7 +9,7 @@ class InvertedPendulumControlNode:
     def read_ROS_params(self):
         # is it worth implementing params? these would go in launch file, like test_generator
         self.calculate_K = rospy.get_param('~calculate_K', False) # if true, provide A,B,Q,R to solve ARE and get K, else provide K
-        self.matrices_path = rospy.get_param('~matrices_path', '/matrices')# path to matrices A,B,Q,R,K
+        self.matrices_path = rospy.get_param('~matrices_path', '/matrices') # path to matrices A,B,Q,R,K
         pass
 
     def init_system(self):
@@ -55,15 +53,15 @@ class InvertedPendulumControlNode:
         # Actuator
         self.x
         self.y
-        self.d_x
-        self.d_y
+        self.xD
+        self.yD
         # maybe add previous state as buffer variable
         
         # Pendulum
         self.phi
         self.theta
-        self.d_phi
-        self.d_theta
+        self.phiD
+        self.thetaD
 
         # processing times?
 
@@ -76,7 +74,7 @@ class InvertedPendulumControlNode:
     def init_publishers(self):
                                                         # get messages in order
         self.pub_phi = rospy.Publisher(self.CHANGE_THIS, ScalarStamped, queue_size=10)
-        self.pub_d_phi = rospy.Publisher(self.CHANGE_THIS, ScalarStamped, queue_size=10)
+        self.pub_phiD = rospy.Publisher(self.CHANGE_THIS, ScalarStamped, queue_size=10)
 
     def publish_pendulum_states(self):
         # phi prob not here but dphi

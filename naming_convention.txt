@@ -1,0 +1,31 @@
+Topic Organisation
+
+/(origin or subsystem)/variable
+
+examples:
+angle phi can be: /vicon/phi or /gelsight/phi
+motor readings would be: /top/x or /bottom/xD
+
+i'll try to write all topics that I need:
+
+/gelsight/rgb
+
+# not sure yet if i'll use separate angles or just /gelsight/angles with the Angles2d msg as already implemented (also maybe add a stamp). I'll have to figure out how to get the msg to other packages.
+/gelsight/phi
+/gelsight/phiD
+/gelsight/theta
+/gelsight/thetaD
+
+/vicon/phi
+/vicon/phiD
+/vicon/theta
+/vicon/thetaD
+
+/top/x
+/top/xD
+/bottom/x
+/bottom/xD
+
+# these are the commands for the actuators, but maxon has other topic names. I'll prob not use these but the existing ones
+/top/v_sp
+/bottom/v_sp 
