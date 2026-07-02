@@ -8,6 +8,7 @@ class StateFeedbackNode:
     def __init__(self):
         rospy.init_node(name='state_feedback', anonymous=True)
         self.read_params()
+        self.read_matrices()
         self.init_publishers()
         self.init_variables()
 
@@ -18,7 +19,6 @@ class StateFeedbackNode:
         self.state_topic = rospy.get_param('~subsystem_topic') # no default value possible?
         self.pub_topic = rospy.get_param('~pub_topic')
 
-        # publish u for introspection?
 
     def read_matrices(self):
         self.A = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Ac.csv", delimiter=","))
@@ -35,6 +35,7 @@ class StateFeedbackNode:
     def init_publishers(self):
         self.pub_v = rospy.Publisher(self.pub_topic, ScalarStamped, queue_size=1)
         self.v_sp_msg = ScalarStamped()
+        # publish u for introspection?
 
     def init_variables(self):
         self.u_prev = ScalarStamped()
@@ -60,7 +61,7 @@ class StateFeedbackNode:
         # maybe add support to write K to file, but for now i'll just print it
         print("Calculated K:")
         print(K)
-        
+
         return K
     
     def callback(self, msg):
@@ -81,10 +82,14 @@ class StateFeedbackNode:
     def run(self):
         rospy.Subscriber(self.state_topic, VectorStamped, self.callback)
         rospy.spin()
-    
-class StateFeedback:
-    def __init__(self, K):
-        self.K = K
 
-    def step(self, x):
-        return -self.K @ x
+if __name__ == "__main__":
+    node = StateFeedbackNode()
+    node.run()
+    
+# class StateFeedback:
+#     def __init__(self, K):
+#         self.K = K
+
+#     def step(self, x):
+#         return -self.K @ x

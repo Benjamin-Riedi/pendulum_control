@@ -144,3 +144,7 @@ class InvertedPendulumControlNode:
         rospy.Subscriber(self.gelsight_angles_topic, Angles2dStamped, self.callback_sensor)
         # problem discovered: each variable has separate topic but pos and vel are publishes at the same time.
         # do i just ignore this and have getState() just read latest values? what goes into callbacks?
+
+if __name__ == "__main__":
+    node = InvertedPendulumControlNode()
+    node.run()
