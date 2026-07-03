@@ -88,10 +88,3 @@ class StateFeedbackNode:
 if __name__ == "__main__":
     node = StateFeedbackNode()
     node.run()
-    
-# class StateFeedback:
-#     def __init__(self, K):
-#         self.K = K
-
-#     def step(self, x):
-#         return -self.K @ x

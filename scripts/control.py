@@ -11,7 +11,6 @@ class InvertedPendulumControlNode:
         rospy.init_node('inv_pend_node', anonymous=True)
 
         self.read_ROS_params()
-        # self.init_controllers()
         self.init_publishers()
         self.init_variables()
 
@@ -36,37 +35,11 @@ class InvertedPendulumControlNode:
         self.state_bottom_topic = rospy.get_param('/topics/control/state/bottom', '/bottom/state')
         self.state_top_topic = rospy.get_param('/topics/control/state/top', '/top/state')
 
+        self.measurement_bottom_topic = rospy.get_param('/topics/control/measurement/bottom', '/bottom/y')
+        self.measurement_top_topic = rospy.get_param('/topics/control/measurement/top', '/top/y')
+
         self.motor_state_bottom_topic = rospy.get_param('/topics/Maxon_Motor_bottom/state', '/Maxon_Motor_bottom/state')
         self.motor_state_top_topic = rospy.get_param('/topics/Maxon_Motor_top/state', '/Maxon_Motor_top/state')
-
-    # def init_controllers(self):
-
-    #     # matrices
-    #     self.A = np.atleast_2d(
-    #         np.genfromtxt(self.matrices_path + "/Ac.csv", delimiter=",")
-    #     )
-    #     self.B_b = np.atleast_2d(
-    #         np.genfromtxt(self.matrices_path + "/Bc.csv", delimiter=",")
-    #     )
-    #     self.B_t = self.B_b.copy()
-    #     self.B_t[0, -1] *= -1
-
-    #     self.Q = np.atleast_2d(
-    #         np.genfromtxt(self.matrices_path + "/Q.csv", delimiter=",")
-    #     )
-    #     self.R = np.atleast_2d(
-    #         np.genfromtxt(self.matrices_path + "/R.csv", delimiter=",")
-    #     )
-        
-    #     if self.b_calculate_K:
-    #         self.K_b = self.calculate_K(self.B_b)
-    #         self.K_t = self.calculate_K(self.B_t)
-    #     else:
-    #         #adjust for 2 systems
-    #         self.K = np.atleast_2d(np.genfromtxt(self.matrices_path + '/K.csv', delimiter=','))
-
-    #     self.controller_bottom = StateFeedback(self.K_b)
-    #     self.controller_top = StateFeedback(self.K_t)
 
     def init_variables(self):
         # STATE
@@ -96,11 +69,18 @@ class InvertedPendulumControlNode:
         self.pub_gelsight_anglesD = rospy.Publisher(self.gelsight_anglesD_topic, Angles2dStamped, queue_size=10)
         self.pub_command_bottom = rospy.Publisher(self.command_bottom_topic, ScalarStamped, queue_size=10)
         self.pub_command_top = rospy.Publisher(self.command_top_topic, ScalarStamped, queue_size=10)
+
         self.pub_bottom_state = rospy.Publisher(self.state_bottom_topic, VectorStamped, queue_size=10)
         self.pub_top_state = rospy.Publisher(self.state_top_topic, VectorStamped, queue_size=10)
 
         self.bottom_state_msg = VectorStamped()
         self.top_state_msg = VectorStamped()
+
+        self.pub_bottom_measurement = rospy.Publisher(self.measurement_bottom_topic, VectorStamped, queue_size=10)
+        self.pub_top_measurement = rospy.Publisher(self.measurement_top_topic, VectorStamped, queue_size=10)
+
+        self.bottom_measurement_msg = VectorStamped()
+        self.top_measurement_msg = VectorStamped()
 
         # maybe add publishers for state variables, for debugging/validation
         # maybe add some errors/additional metrics
@@ -115,26 +95,35 @@ class InvertedPendulumControlNode:
         top = np.array([self.y, self.yD, self.theta, self.thetaD]).reshape(-1,1)
         return bottom, top
     
+    def get_measurement(self):
+        bottom = np.array([self.x, self.xD, self.phi]).reshape(-1,1)
+        top = np.array([self.y, self.yD, self.theta]).reshape(-1,1)
+        return bottom, top
+    
     def callback_sensor(self, msg):
         # here i need the state feedback step
-        # u_bottom = self.controller_bottom.step(self.get_state())
-        # u_top = self.controller_top.step(self.get_state())
-        self.phi = msg.angleX
-        self.theta = msg.angleY
         # implement finite difference for phiD and thetaD, or maybe a Kalman filter
 
         self.time = msg.header.stamp
 
-        self.bottom_state_msg.vector, self.top_state_msg.vector = self.get_state()
-        self.bottom_state_msg.header.stamp = self.time
-        self.top_state_msg.header.stamp = self.time
-        self.pub_bottom_state.publish(self.bottom_state_msg)
-        v_sp_bottom = rospy.wait_for_message(self.command_bottom_topic, ScalarStamped, timeout=0.5)
-        self.pub_top_state.publish(self.top_state_msg)
-        v_sp_top = rospy.wait_for_message(self.command_top_topic, ScalarStamped, timeout=0.5)
+        if self.b_kalman_filter:
+            self.bottom_measurement_msg.vector, self.top_measurement_msg.vector = self.get_measurement()
+            self.bottom_measurement_msg.header.stamp = self.time
+            self.top_measurement_msg.header.stamp = self.time
+            self.pub_bottom_measurement.publish(self.bottom_measurement_msg)
+            self.pub_top_measurement.publish(self.top_measurement_msg)
+        else:
+            self.bottom_state_msg.vector, self.top_state_msg.vector = self.get_state()
+            self.bottom_state_msg.header.stamp = self.time
+            self.top_state_msg.header.stamp = self.time
+            self.pub_bottom_state.publish(self.bottom_state_msg)
+            self.pub_top_state.publish(self.top_state_msg)
 
-        self.pub_command_bottom.publish(v_sp_bottom)
-        self.pub_command_top.publish(v_sp_top)
+        # if i'm not mistaken this is redundant
+        # v_sp_bottom = rospy.wait_for_message(self.command_bottom_topic, ScalarStamped, timeout=0.5)
+        # v_sp_top = rospy.wait_for_message(self.command_top_topic, ScalarStamped, timeout=0.5)
+        # self.pub_command_bottom.publish(v_sp_bottom)
+        # self.pub_command_top.publish(v_sp_top)
 
     def callback_bottom(self, msg):
         # this just updates the state variables
@@ -147,6 +136,9 @@ class InvertedPendulumControlNode:
     def callback_top(self, msg):
         self.y = msg.vector[0]
         self.yD = msg.vector[1]
+        pass
+
+    def finite_difference(self, new_value, old_value, dt):
         pass
 
     def run(self):

@@ -21,6 +21,9 @@ topics:
     state: 
       bottom: "/bottom/state"
       top: "/top/state"
+    measurement:
+      bottom: "/bottom/y"
+      top: "/top/y"
     command:
       bottom: "/bottom/v_sp"
       top: "/top/v_sp"
