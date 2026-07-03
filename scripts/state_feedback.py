@@ -16,7 +16,7 @@ class StateFeedbackNode:
         self.b_calculate_K = rospy.get_param("~calculate_K", False)  # if true, provide A,B,Q,R to solve ARE and get K, else provide K
         self.matrices_path = rospy.get_param('~matrices_path')
         self.B_file_path = rospy.get_param("~B_path")
-        self.state_topic = rospy.get_param('~subsystem_topic') # no default value possible?
+        self.state_topic = rospy.get_param('~subsystem_topic')
         self.pub_topic = rospy.get_param('~pub_topic')
 
 
@@ -38,7 +38,6 @@ class StateFeedbackNode:
         # publish u for introspection?
 
     def init_variables(self):
-        self.u_prev = ScalarStamped()
         self.u = 0.0
         self.time = 0
     
@@ -76,6 +75,9 @@ class StateFeedbackNode:
         self.u_prev.header.stamp = self.time
 
     def integrate(self):
+        if not hasattr(self, 'u_prev'):
+            self.u_prev = ScalarStamped(data=0.0)
+            self.u_prev.header.stamp = self.time - 0.01
         dt = (self.time - self.u_prev.header.stamp).to_sec()
         return 0.5 * dt * (self.u + self.u_prev.data)
     

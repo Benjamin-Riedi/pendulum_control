@@ -25,19 +25,19 @@ class InvertedPendulumControlNode:
         self.vicon_state_topic = rospy.get_param('/topics/vicon/state', '/vicon/benjamin_v2/Root')
         self.vicon_world_topic = rospy.get_param('/topics/vicon/world', '/vicon/benjamin_v2/World')
 
-        self.bottom_position_topic = rospy.get_param('/topics/position/bottom', '/bottom/x')
-        self.top_position_topic = rospy.get_param('/topics/position/top', '/top/x')
-        self.bottom_velocity_topic = rospy.get_param('/topics/velocity/bottom', '/bottom/xD')
-        self.top_velocity_topic = rospy.get_param('/topics/velocity/top', '/top/xD')
+        self.position_bottom_topic = rospy.get_param('/topics/position/bottom', '/bottom/x')
+        self.position_top_topic = rospy.get_param('/topics/position/top', '/top/x')
+        self.velocity_bottom_topic = rospy.get_param('/topics/velocity/bottom', '/bottom/xD')
+        self.velocity_top_topic = rospy.get_param('/topics/velocity/top', '/top/xD')
 
         self.command_bottom_topic = rospy.get_param('/topics/control/command/bottom', '/bottom/v_sp')
         self.command_top_topic = rospy.get_param('/topics/control/command/top', '/top/v_sp')
 
-        self.bottom_state_topic = rospy.get_param('/topics/control/state/bottom', '/bottom/state')
-        self.top_state_topic = rospy.get_param('/topics/control/state/top', '/top/state')
+        self.state_bottom_topic = rospy.get_param('/topics/control/state/bottom', '/bottom/state')
+        self.state_top_topic = rospy.get_param('/topics/control/state/top', '/top/state')
 
-        self.bottom_motor_state_topic = rospy.get_param('/topics/Maxon_Motor_bottom/state', '/Maxon_Motor_bottom/state')
-        self.top_motor_state_topic = rospy.get_param('/topics/Maxon_Motor_top/state', '/Maxon_Motor_top/state')
+        self.motor_state_bottom_topic = rospy.get_param('/topics/Maxon_Motor_bottom/state', '/Maxon_Motor_bottom/state')
+        self.motor_state_top_topic = rospy.get_param('/topics/Maxon_Motor_top/state', '/Maxon_Motor_top/state')
 
     # def init_controllers(self):
 
@@ -84,6 +84,7 @@ class InvertedPendulumControlNode:
         self.thetaD = 0.0
 
         # processing times?
+        self.time = 0
 
         # mode
         self.vicon = False # set to true if phi & d_phi is calculated from vicon, else they come from the sensor
@@ -95,8 +96,8 @@ class InvertedPendulumControlNode:
         self.pub_gelsight_anglesD = rospy.Publisher(self.gelsight_anglesD_topic, Angles2dStamped, queue_size=10)
         self.pub_command_bottom = rospy.Publisher(self.command_bottom_topic, ScalarStamped, queue_size=10)
         self.pub_command_top = rospy.Publisher(self.command_top_topic, ScalarStamped, queue_size=10)
-        self.pub_bottom_state = rospy.Publisher(self.bottom_state_topic, VectorStamped, queue_size=10)
-        self.pub_top_state = rospy.Publisher(self.top_state_topic, VectorStamped, queue_size=10)
+        self.pub_bottom_state = rospy.Publisher(self.state_bottom_topic, VectorStamped, queue_size=10)
+        self.pub_top_state = rospy.Publisher(self.state_top_topic, VectorStamped, queue_size=10)
 
         self.bottom_state_msg = VectorStamped()
         self.top_state_msg = VectorStamped()
@@ -118,8 +119,15 @@ class InvertedPendulumControlNode:
         # here i need the state feedback step
         # u_bottom = self.controller_bottom.step(self.get_state())
         # u_top = self.controller_top.step(self.get_state())
+        self.phi = msg.angleX
+        self.theta = msg.angleY
+        # implement finite difference for phiD and thetaD, or maybe a Kalman filter
+
+        self.time = msg.header.stamp
 
         self.bottom_state_msg.vector, self.top_state_msg.vector = self.get_state()
+        self.bottom_state_msg.header.stamp = self.time
+        self.top_state_msg.header.stamp = self.time
         self.pub_bottom_state.publish(self.bottom_state_msg)
         v_sp_bottom = rospy.wait_for_message(self.command_bottom_topic, ScalarStamped, timeout=0.5)
         self.pub_top_state.publish(self.top_state_msg)
@@ -132,14 +140,18 @@ class InvertedPendulumControlNode:
         # this just updates the state variables
         # with this setup i'll need a callback for each variable, but i can just have them all call set_state() to update the state vector
         # so maybe a synchronizer wouldn't be a terrible idea
+        self.x = msg.vector[0]
+        self.xD = msg.vector[1]
         pass
 
     def callback_top(self, msg):
+        self.y = msg.vector[0]
+        self.yD = msg.vector[1]
         pass
 
     def run(self):
-        rospy.Subscriber(self.bottom_state_topic, ScalarStamped, self.callback_bottom)
-        rospy.Subscriber(self.top_state_topic, ScalarStamped, self.callback_top)
+        rospy.Subscriber(self.motor_state_bottom_topic, VectorStamped, self.callback_bottom)
+        rospy.Subscriber(self.motor_state_top_topic, VectorStamped, self.callback_top)
         rospy.Subscriber(self.vicon_angles_topic, Angles2dStamped, self.callback_sensor) # don't forget about self.vicon distinction
         rospy.Subscriber(self.gelsight_angles_topic, Angles2dStamped, self.callback_sensor)
         # problem discovered: each variable has separate topic but pos and vel are publishes at the same time.
