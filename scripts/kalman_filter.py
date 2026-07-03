@@ -13,6 +13,7 @@ class LQGNode:
         self.init_variables()
 
     def read_params(self):
+        """Read parameters from launch file"""
         self.b_calculate_gains = rospy.get_param("~calculate_gains", False)  # if true, provide A,B,Q,R to solve ARE and get K, else provide K
         self.matrices_path = rospy.get_param('~matrices_path')
         self.B_file_path = rospy.get_param("~B_path")
@@ -21,6 +22,7 @@ class LQGNode:
 
 
     def read_matrices(self):
+        """Read matrices from CSV files"""
         self.A = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Ac.csv", delimiter=","))
         self.B = np.atleast_2d(np.genfromtxt(self.matrices_path + self.B_file_path, delimiter=","))
 
@@ -41,9 +43,17 @@ class LQGNode:
 
     def init_publishers(self):
         self.pub_v = rospy.Publisher(self.pub_topic, ScalarStamped, queue_size=1)
+
+        self.v_sp_msg = ScalarStamped()
         # add state estimation error
+
+    def init_variables(self):
+        self.x = np.zeros((self.A.shape[0], 1))  # state estimate
+        self.y = np.zeros((self.Cd.shape[0], 1))  # measurement
+        self.time = 0
     
     def discretize(self):
+        """Converts continuous-time system matrices to discrete-time"""
         # no input feedthrough
         D = np.zeros((3,1))
 
@@ -55,6 +65,7 @@ class LQGNode:
         self.Cd = sys_d.C
 
     def calculate_K(self):
+        """If self.b_calculate_gains is True, calculate the optimal state feedback gain K using the discrete-time LQR method."""
         # here i'd add the normalization (Tx, Tu) but i'll leave it out for now
         # if normalize: ...
 
@@ -66,6 +77,7 @@ class LQGNode:
         return K
 
     def calculate_L(self):
+        """If self.b_calculate_gains is True, calculate the optimal observer gain L using the discrete-time LQE method."""
         G = np.eye(3)
 
         # here i'd add the normalization (Tx, Tu) but i'll leave it out for now
@@ -96,15 +108,19 @@ class LQGNode:
         self.x = self.a_priori_estimate()
     
     def a_posteriori_estimate(self):
+        """This is the state estimate after incorporating the latest measurement y_k."""
         return self.x + self.L @ (self.y - self.Cd @ self.x)
     
     def a_priori_estimate(self):
+        """This is the state estimate considering only the system dynamics and the previous control input u_k."""
         return self.Ad @ self.x + self.Bd @ self.u
     
     def state_feedback_step(self):
+        """Calculate the control input u_k based on the current state estimate x_k."""
         return -self.K @ self.x
     
     def integrate(self):
+        """Integrate the control input u_k over time to get the desired velocity setpoint v_sp. First-order integration is used."""
         if not hasattr(self, 'u_prev'):
             self.u_prev = ScalarStamped(data=0.0)
             self.u_prev.header.stamp = self.time - 0.01 # maybe use variable self.Ts

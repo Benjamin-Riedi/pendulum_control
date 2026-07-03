@@ -4,7 +4,7 @@
     <include file="$(find ethercat_ros_configurator)/launch/test_motor_start.launch" />
 
     <node pkg="pendulum_control" type="control.py" name="pendulum_control_node" output="screen">
-        <param name="calculate_K" value="false" />
+        <param name="calculate_gains" value="false" />
     </node>
     <node pkg="pendulum_control" type="state_feedback.py" name="bottom_state_feedback_node" output="screen">
         <param name="matrices_path" value="data/matrices" />
@@ -16,6 +16,18 @@
         <param name="matrices_path" value="data/matrices" />
         <param name="B_path" value="/Bct.csv" />
         <param name="subsystem_topic" value="/top/state" />
+        <param name="pub_topic" value="/top/v_sp" />
+    </node>
+    <node pkg="pendulum_control" type="kalman_filter.py" name="kalman_filter_node_bottom" output="screen">
+        <param name="matrices_path" value="data/matrices" />
+        <param name="B_path" value="/Bcb.csv" />
+        <param name="subsystem_topic" value="/bottom/y" />
+        <param name="pub_topic" value="/bottom/v_sp" />
+    </node>
+    <node pkg="pendulum_control" type="kalman_filter.py" name="kalman_filter_node_top" output="screen">
+        <param name="matrices_path" value="data/matrices" />
+        <param name="B_path" value="/Bct.csv" />
+        <param name="subsystem_topic" value="/top/y" />
         <param name="pub_topic" value="/top/v_sp" />
     </node>
 </launch>

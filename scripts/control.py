@@ -4,7 +4,6 @@ import numpy as np
 
 from control_utils.msg import ScalarStamped, VectorStamped
 from gelsight_ros.msg import Angles2dStamped
-from state_feedback import StateFeedback
 
 class InvertedPendulumControlNode:
     def __init__(self):
@@ -15,7 +14,7 @@ class InvertedPendulumControlNode:
         self.init_variables()
 
     def read_ROS_params(self):
-        # topics
+        """Load parameters from ROS parameter server"""
         self.gelsight_angles_topic = rospy.get_param('/topics/gelsight/angles', '/gelsight/angles')
         self.gelsight_anglesD_topic = rospy.get_param('/topics/gelsight/anglesD', '/gelsight/anglesD')
         self.vicon_angles_topic = rospy.get_param('/topics/vicon/angles', '/vicon/angles')
@@ -42,7 +41,6 @@ class InvertedPendulumControlNode:
         self.motor_state_top_topic = rospy.get_param('/topics/Maxon_Motor_top/state', '/Maxon_Motor_top/state')
 
     def init_variables(self):
-        # STATE
         # Actuator
         self.x = 0.0
         self.y = 0.0
@@ -56,8 +54,8 @@ class InvertedPendulumControlNode:
         self.phiD = 0.0
         self.thetaD = 0.0
 
-        # processing times?
-        self.time = 0
+        # callback time
+        self.time = rospy.Time.now()
 
         # mode
         self.vicon = False # set to true if phi & d_phi is calculated from vicon, else they come from the sensor
@@ -65,6 +63,7 @@ class InvertedPendulumControlNode:
         # for validation i'll want the vicon stream regardless. (does something break if vicon is not on?)
 
     def init_publishers(self):
+        """Initialize ROS publishers, initialize message variables"""
         self.pub_vicon_anglesD = rospy.Publisher(self.vicon_anglesD_topic, Angles2dStamped, queue_size=10)
         self.pub_gelsight_anglesD = rospy.Publisher(self.gelsight_anglesD_topic, Angles2dStamped, queue_size=10)
         self.pub_command_bottom = rospy.Publisher(self.command_bottom_topic, ScalarStamped, queue_size=10)
@@ -85,25 +84,28 @@ class InvertedPendulumControlNode:
         # maybe add publishers for state variables, for debugging/validation
         # maybe add some errors/additional metrics
 
-    def publish_pendulum_states(self):
-        # phi prob not here but dphi
-        # first try finite difference, but prob a Kalman filter is necessary
-        pass
-
     def get_state(self):
+        """Concatenate state variables into one vector per subsystem for publishing"""
         bottom = np.array([self.x, self.xD, self.phi, self.phiD]).reshape(-1,1)
         top = np.array([self.y, self.yD, self.theta, self.thetaD]).reshape(-1,1)
         return bottom, top
     
     def get_measurement(self):
+        """Concatenate measurement variables into one vector per subsystem for publishing"""
         bottom = np.array([self.x, self.xD, self.phi]).reshape(-1,1)
         top = np.array([self.y, self.yD, self.theta]).reshape(-1,1)
         return bottom, top
     
+    def finite_difference(self, angles, dt):
+        """Calculate angular velocities using finite difference method"""
+        return (np.array([self.phi, self.theta]) - angles) / dt
+    
     def callback_sensor(self, msg):
-        # here i need the state feedback step
-        # implement finite difference for phiD and thetaD, or maybe a Kalman filter
-
+        """Callback function for sensor data (angles)
+        Publishes state or measurement depending on whether Kalman filter is used."""
+        old_angles = np.array([self.phi, self.theta])
+        self.phi, self.theta = msg.vector
+        dt = (msg.header.stamp - self.time).to_sec()
         self.time = msg.header.stamp
 
         if self.b_kalman_filter:
@@ -113,6 +115,8 @@ class InvertedPendulumControlNode:
             self.pub_bottom_measurement.publish(self.bottom_measurement_msg)
             self.pub_top_measurement.publish(self.top_measurement_msg)
         else:
+            self.phiD, self.thetaD = self.finite_difference(old_angles, dt)
+
             self.bottom_state_msg.vector, self.top_state_msg.vector = self.get_state()
             self.bottom_state_msg.header.stamp = self.time
             self.top_state_msg.header.stamp = self.time
@@ -126,28 +130,25 @@ class InvertedPendulumControlNode:
         # self.pub_command_top.publish(v_sp_top)
 
     def callback_bottom(self, msg):
-        # this just updates the state variables
-        # with this setup i'll need a callback for each variable, but i can just have them all call set_state() to update the state vector
-        # so maybe a synchronizer wouldn't be a terrible idea
+        """Callback function for bottom motor state data"""
         self.x = msg.vector[0]
         self.xD = msg.vector[1]
         pass
 
     def callback_top(self, msg):
+        """Callback function for top motor state data"""
         self.y = msg.vector[0]
         self.yD = msg.vector[1]
         pass
 
-    def finite_difference(self, new_value, old_value, dt):
-        pass
 
     def run(self):
+        """Subscribe to relevant topics and start the ROS node"""
         rospy.Subscriber(self.motor_state_bottom_topic, VectorStamped, self.callback_bottom)
         rospy.Subscriber(self.motor_state_top_topic, VectorStamped, self.callback_top)
         rospy.Subscriber(self.vicon_angles_topic, Angles2dStamped, self.callback_sensor) # don't forget about self.vicon distinction
         rospy.Subscriber(self.gelsight_angles_topic, Angles2dStamped, self.callback_sensor)
-        # problem discovered: each variable has separate topic but pos and vel are publishes at the same time.
-        # do i just ignore this and have getState() just read latest values? what goes into callbacks?
+        rospy.spin()
 
 if __name__ == "__main__":
     node = InvertedPendulumControlNode()
