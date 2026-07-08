@@ -1,4 +1,6 @@
 import rospy
+import rospkg
+import os
 import numpy as np
 import control
 
@@ -7,6 +9,8 @@ from control_utils.msg import VectorStamped, ScalarStamped
 class LQGNode:
     def __init__(self):
         rospy.init_node(name='lqg', anonymous=True)
+        rospack = rospkg.RosPack()
+        self.package_path = rospack.get_path('pendulum_control')
         self.read_params()
         self.read_matrices()
         self.init_publishers()
@@ -15,16 +19,23 @@ class LQGNode:
     def read_params(self):
         """Read parameters from launch file"""
         self.b_calculate_gains = rospy.get_param("~calculate_gains", False)  # if true, provide A,B,Q,R to solve ARE and get K, else provide K
-        self.matrices_path = rospy.get_param('~matrices_path')
+        self.matrices_param = rospy.get_param('~matrices_path')
         self.B_file_path = rospy.get_param("~B_path")
         self.output_topic = rospy.get_param('~subsystem_topic')
         self.pub_topic = rospy.get_param('~pub_topic')
+        self.Ts = 0.01
+
+        if os.path.isabs(self.matrices_param):
+            self.matrices_path = self.matrices_param
+        else:
+            self.matrices_path = os.path.join(self.package_path, self.matrices_param)
 
 
     def read_matrices(self):
         """Read matrices from CSV files"""
         self.A = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Ac.csv", delimiter=","))
-        self.B = np.atleast_2d(np.genfromtxt(self.matrices_path + self.B_file_path, delimiter=","))
+        self.B = np.atleast_2d(np.genfromtxt(self.matrices_path + self.B_file_path, delimiter=",")).reshape(-1,1)
+        self.C = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Cc.csv", delimiter=","))
 
         self.Qr = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Qr.csv", delimiter=","))
         self.Rr = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Rr.csv", delimiter=","))
@@ -50,7 +61,8 @@ class LQGNode:
     def init_variables(self):
         self.x = np.zeros((self.A.shape[0], 1))  # state estimate
         self.y = np.zeros((self.Cd.shape[0], 1))  # measurement
-        self.time = 0
+        self.u = 0.0  # control input
+        self.time = rospy.Time.now()
     
     def discretize(self):
         """Converts continuous-time system matrices to discrete-time"""
@@ -78,7 +90,7 @@ class LQGNode:
 
     def calculate_L(self):
         """If self.b_calculate_gains is True, calculate the optimal observer gain L using the discrete-time LQE method."""
-        G = np.eye(3)
+        G = np.eye(4)
 
         # here i'd add the normalization (Tx, Tu) but i'll leave it out for now
         # if normalize: ...
@@ -122,10 +134,10 @@ class LQGNode:
     def integrate(self):
         """Integrate the control input u_k over time to get the desired velocity setpoint v_sp. First-order integration is used."""
         if not hasattr(self, 'u_prev'):
-            self.u_prev = ScalarStamped(data=0.0)
-            self.u_prev.header.stamp = self.time - 0.01 # maybe use variable self.Ts
+            self.u_prev = ScalarStamped(scalar=0.0)
+            self.u_prev.header.stamp = self.time - rospy.Duration(0,10000000) # maybe use variable self.Ts
         dt = (self.time - self.u_prev.header.stamp).to_sec()
-        return 0.5 * dt * (self.u + self.u_prev.data)
+        return 0.5 * dt * (self.u + self.u_prev.scalar)
     
     def run(self):
         rospy.Subscriber(self.output_topic, VectorStamped, self.callback)

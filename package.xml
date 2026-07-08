@@ -55,6 +55,8 @@
   <build_export_depend>std_msgs</build_export_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-control</exec_depend>
 
   <depend>control_utils</depend>
   <depend>gelsight_ros</depend>

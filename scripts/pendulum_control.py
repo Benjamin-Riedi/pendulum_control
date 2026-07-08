@@ -1,4 +1,4 @@
-import control
+# import control
 import rospy
 import numpy as np
 
@@ -146,7 +146,7 @@ class InvertedPendulumControlNode:
         """Subscribe to relevant topics and start the ROS node"""
         rospy.Subscriber(self.motor_state_bottom_topic, VectorStamped, self.callback_bottom)
         rospy.Subscriber(self.motor_state_top_topic, VectorStamped, self.callback_top)
-        rospy.Subscriber(self.vicon_angles_topic, Angles2dStamped, self.callback_sensor) # don't forget about self.vicon distinction
+        rospy.Subscriber(self.vicon_angles_topic, VectorStamped, self.callback_sensor) # don't forget about self.vicon distinction
         rospy.Subscriber(self.gelsight_angles_topic, Angles2dStamped, self.callback_sensor)
         rospy.spin()
 

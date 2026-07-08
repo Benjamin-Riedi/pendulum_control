@@ -65,21 +65,21 @@ class StateFeedbackNode:
     
     def callback(self, msg):
         self.time = msg.header.stamp
-        msg.vector.reshape(-1,1)
+        # msg.vector.reshape(-1,1)
         self.u = -self.K @ msg.vector
 
-        self.v_sp_msg.data = self.integrate()
+        self.v_sp_msg.scalar = self.integrate()
         self.pub_v.publish(self.v_sp_msg)
 
-        self.u_prev.data = self.u
+        self.u_prev.scalar = self.u
         self.u_prev.header.stamp = self.time
 
     def integrate(self):
         if not hasattr(self, 'u_prev'):
-            self.u_prev = ScalarStamped(data=0.0)
+            self.u_prev = ScalarStamped(scalar=0.0)
             self.u_prev.header.stamp = self.time - 0.01
         dt = (self.time - self.u_prev.header.stamp).to_sec()
-        return 0.5 * dt * (self.u + self.u_prev.data)
+        return 0.5 * dt * (self.u + self.u_prev.scalar)
     
     def run(self):
         rospy.Subscriber(self.state_topic, VectorStamped, self.callback)
