@@ -15,6 +15,8 @@ class LQGNode:
         self.read_matrices()
         self.init_publishers()
         self.init_variables()
+        print("x", self.x)
+
 
     def read_params(self):
         """Read parameters from launch file"""
@@ -54,6 +56,7 @@ class LQGNode:
 
     def init_publishers(self):
         self.pub_v = rospy.Publisher(self.pub_topic, ScalarStamped, queue_size=1)
+        self.pub_u = rospy.Publisher('/bottom/u', ScalarStamped, queue_size=1)
 
         self.v_sp_msg = ScalarStamped()
         # add state estimation error
@@ -108,19 +111,37 @@ class LQGNode:
         u_k goes into the system and also calculates the a priori state x_k+1. The a priori estimate x_k+1 is updated with the next measurement y_k+1.
         """
         self.y = msg.vector
+        print("datatype of y", type(self.y))
+        print("x", self.x)
+        print("y", self.y)
         self.x = self.a_posteriori_estimate()
+        print("x", self.x)
         self.u = self.state_feedback_step()
+        print("u", self.u)
+        # u_msg = ScalarStamped()
+        # # u_msg.scalar must be float type, so somehow convert [[u]] to u
+        # u_msg.scalar = float(u_flat[0])
+        # print("Input:", u_msg.scalar)
+        # self.pub_u.publish(u_msg)
 
-        self.v_sp_msg.data = self.integrate()
+        self.v_sp_msg.scalar = self.integrate()
         self.pub_v.publish(self.v_sp_msg)
 
-        self.u_prev.data = self.u
+        self.u_prev.scalar = self.u
         self.u_prev.header.stamp = self.time
         #
         self.x = self.a_priori_estimate()
     
     def a_posteriori_estimate(self):
         """This is the state estimate after incorporating the latest measurement y_k."""
+        # print all variables for debugging
+        print("Cd", self.Cd)
+        print("x", self.x)
+        print("y", self.y)
+        print("L", self.L)
+        print("Cd @ x", self.Cd @ self.x)
+        print("y - Cd @ x", self.y - self.Cd @ self.x)
+        print("L @ (y - Cd @ x)", self.L @ (self.y - self.Cd @ self.x))
         return self.x + self.L @ (self.y - self.Cd @ self.x)
     
     def a_priori_estimate(self):
