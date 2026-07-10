@@ -14,7 +14,8 @@ class DynamicsSimulatorNode:
         self.package_path = rospack.get_path('pendulum_control')
         self.read_params()
         self.read_matrices()
-        self.pub_state = rospy.Publisher('/bottom/y', ArrayStamped, queue_size=1)
+        self.pub_output = rospy.Publisher('/bottom/y', ArrayStamped, queue_size=1)
+        self.pub_state = rospy.Publisher('/bottom/state', ArrayStamped, queue_size=1)
         self.x = np.zeros((self.A.shape[0], 1))  # state vector
 
         # print(self.A, self.B, self.C)
@@ -63,17 +64,19 @@ class DynamicsSimulatorNode:
         # print("Input:", self.u)
         # print("State:", self.x)
         self.output = self.dynamics_step()
+        print("Output:", self.output)
         # wait to simulate sensor delay
         rospy.sleep(self.Ts)
-        pubArray(self.pub_state, self.output, rospy.Time.now())
+        pubArray(self.pub_output, self.output, rospy.Time.now())
+        pubArray(self.pub_state, self.x, rospy.Time.now())
         # self.pub_state.publish(ArrayStamped(vector=self.output))
 
 
     def dynamics_step(self):
         """Perform one step of the dynamics simulation"""
-        self.x = self.A @ self.x + self.B @ self.u
-        y = self.C @ self.x
-        return y
+        self.x = np.asarray(self.Ad @ self.x + self.Bd @ self.u)
+        y = self.Cd @ self.x
+        return np.asarray(y)
         
 
     def run(self):
