@@ -4,7 +4,8 @@ import os
 import numpy as np
 import control
 
-from control_utils.msg import ScalarStamped, VectorStamped
+from pendulum_control.common import * # this imports the common messages
+from pendulum_control import pubArray
 
 class DynamicsSimulatorNode:
     def __init__(self):
@@ -13,7 +14,7 @@ class DynamicsSimulatorNode:
         self.package_path = rospack.get_path('pendulum_control')
         self.read_params()
         self.read_matrices()
-        self.pub_state = rospy.Publisher('/bottom/y', VectorStamped, queue_size=1)
+        self.pub_state = rospy.Publisher('/bottom/y', ArrayStamped, queue_size=1)
         self.x = np.zeros((self.A.shape[0], 1))  # state vector
 
         # print(self.A, self.B, self.C)
@@ -58,13 +59,14 @@ class DynamicsSimulatorNode:
 
     def input_callback(self, msg):
         """Callback function to receive control input"""
-        self.u = np.array([[msg.scalar]])
+        self.u = np.array(msg.scalar).reshape(1,1)
         # print("Input:", self.u)
         # print("State:", self.x)
         self.output = self.dynamics_step()
         # wait to simulate sensor delay
         rospy.sleep(self.Ts)
-        self.pub_state.publish(VectorStamped(vector=self.output)) #.flatten().tolist()
+        pubArray(self.pub_state, self.output, rospy.Time.now())
+        # self.pub_state.publish(ArrayStamped(vector=self.output))
 
 
     def dynamics_step(self):

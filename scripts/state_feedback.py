@@ -2,7 +2,8 @@ import rospy
 import numpy as np
 import control
 
-from control_utils.msg import VectorStamped, ScalarStamped
+from pendulum_control.common import * # this imports the common messages
+from pendulum_control import pubArray, subArray
 
 class StateFeedbackNode:
     def __init__(self):
@@ -82,7 +83,7 @@ class StateFeedbackNode:
         return 0.5 * dt * (self.u + self.u_prev.scalar)
     
     def run(self):
-        rospy.Subscriber(self.state_topic, VectorStamped, self.callback)
+        rospy.Subscriber(self.state_topic, ArrayStamped, self.callback)
         rospy.spin()
 
 if __name__ == "__main__":

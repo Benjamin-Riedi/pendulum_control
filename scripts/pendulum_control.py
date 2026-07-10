@@ -2,8 +2,9 @@
 import rospy
 import numpy as np
 
-from control_utils.msg import ScalarStamped, VectorStamped
 from gelsight_ros.msg import Angles2dStamped
+from pendulum_control.common import * # this imports the common messages
+from pendulum_control import pubArray, subArray
 
 class InvertedPendulumControlNode:
     def __init__(self):
@@ -69,17 +70,17 @@ class InvertedPendulumControlNode:
         self.pub_command_bottom = rospy.Publisher(self.command_bottom_topic, ScalarStamped, queue_size=10)
         self.pub_command_top = rospy.Publisher(self.command_top_topic, ScalarStamped, queue_size=10)
 
-        self.pub_bottom_state = rospy.Publisher(self.state_bottom_topic, VectorStamped, queue_size=10)
-        self.pub_top_state = rospy.Publisher(self.state_top_topic, VectorStamped, queue_size=10)
+        self.pub_bottom_state = rospy.Publisher(self.state_bottom_topic, ArrayStamped, queue_size=10)
+        self.pub_top_state = rospy.Publisher(self.state_top_topic, ArrayStamped, queue_size=10)
 
-        self.bottom_state_msg = VectorStamped()
-        self.top_state_msg = VectorStamped()
+        self.bottom_state_msg = ArrayStamped()
+        self.top_state_msg = ArrayStamped()
 
-        self.pub_bottom_measurement = rospy.Publisher(self.measurement_bottom_topic, VectorStamped, queue_size=10)
-        self.pub_top_measurement = rospy.Publisher(self.measurement_top_topic, VectorStamped, queue_size=10)
+        self.pub_bottom_measurement = rospy.Publisher(self.measurement_bottom_topic, ArrayStamped, queue_size=10)
+        self.pub_top_measurement = rospy.Publisher(self.measurement_top_topic, ArrayStamped, queue_size=10)
 
-        self.bottom_measurement_msg = VectorStamped()
-        self.top_measurement_msg = VectorStamped()
+        self.bottom_measurement_msg = ArrayStamped()
+        self.top_measurement_msg = ArrayStamped()
 
         # maybe add publishers for state variables, for debugging/validation
         # maybe add some errors/additional metrics
@@ -109,25 +110,16 @@ class InvertedPendulumControlNode:
         self.time = msg.header.stamp
 
         if self.b_kalman_filter:
-            self.bottom_measurement_msg.vector, self.top_measurement_msg.vector = self.get_measurement()
-            self.bottom_measurement_msg.header.stamp = self.time
-            self.top_measurement_msg.header.stamp = self.time
-            self.pub_bottom_measurement.publish(self.bottom_measurement_msg)
-            self.pub_top_measurement.publish(self.top_measurement_msg)
+            bottom, top = self.get_measurement()
+            pubArray(self.pub_bottom_measurement, bottom, self.time)
+            pubArray(self.pub_top_measurement, top, self.time)
+
         else:
             self.phiD, self.thetaD = self.finite_difference(old_angles, dt)
 
-            self.bottom_state_msg.vector, self.top_state_msg.vector = self.get_state()
-            self.bottom_state_msg.header.stamp = self.time
-            self.top_state_msg.header.stamp = self.time
-            self.pub_bottom_state.publish(self.bottom_state_msg)
-            self.pub_top_state.publish(self.top_state_msg)
-
-        # if i'm not mistaken this is redundant
-        # v_sp_bottom = rospy.wait_for_message(self.command_bottom_topic, ScalarStamped, timeout=0.5)
-        # v_sp_top = rospy.wait_for_message(self.command_top_topic, ScalarStamped, timeout=0.5)
-        # self.pub_command_bottom.publish(v_sp_bottom)
-        # self.pub_command_top.publish(v_sp_top)
+            bottom, top = self.get_state()
+            pubArray(self.pub_bottom_state, bottom, self.time)
+            pubArray(self.pub_top_state, top, self.time)
 
     def callback_bottom(self, msg):
         """Callback function for bottom motor state data"""
@@ -144,9 +136,9 @@ class InvertedPendulumControlNode:
 
     def run(self):
         """Subscribe to relevant topics and start the ROS node"""
-        rospy.Subscriber(self.motor_state_bottom_topic, VectorStamped, self.callback_bottom)
-        rospy.Subscriber(self.motor_state_top_topic, VectorStamped, self.callback_top)
-        rospy.Subscriber(self.vicon_angles_topic, VectorStamped, self.callback_sensor) # don't forget about self.vicon distinction
+        rospy.Subscriber(self.motor_state_bottom_topic, ArrayStamped, self.callback_bottom)
+        rospy.Subscriber(self.motor_state_top_topic, ArrayStamped, self.callback_top)
+        rospy.Subscriber(self.vicon_angles_topic, ArrayStamped, self.callback_sensor) # don't forget about self.vicon distinction
         rospy.Subscriber(self.gelsight_angles_topic, Angles2dStamped, self.callback_sensor)
         rospy.spin()
 

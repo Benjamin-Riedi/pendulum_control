@@ -4,7 +4,8 @@ import os
 import numpy as np
 import control
 
-from control_utils.msg import VectorStamped, ScalarStamped
+from pendulum_control.common import * # this imports the common messages
+from pendulum_control import pubArray, subArray
 
 class LQGNode:
     def __init__(self):
@@ -110,7 +111,7 @@ class LQGNode:
         msg is measurement y_k (x,xD,phi), we use this to estimate the a posteriori state x_k. This goes into the lqr and gets u_k.
         u_k goes into the system and also calculates the a priori state x_k+1. The a priori estimate x_k+1 is updated with the next measurement y_k+1.
         """
-        self.y = msg.vector
+        self.y = subArray(msg)
         print("datatype of y", type(self.y))
         print("x", self.x)
         print("y", self.y)
@@ -127,7 +128,7 @@ class LQGNode:
         self.v_sp_msg.scalar = self.integrate()
         self.pub_v.publish(self.v_sp_msg)
 
-        self.u_prev.scalar = self.u
+        self.u_prev.scalar = self.u # cast to float?
         self.u_prev.header.stamp = self.time
         #
         self.x = self.a_priori_estimate()
@@ -161,7 +162,7 @@ class LQGNode:
         return 0.5 * dt * (self.u + self.u_prev.scalar)
     
     def run(self):
-        rospy.Subscriber(self.output_topic, VectorStamped, self.callback)
+        rospy.Subscriber(self.output_topic, ArrayStamped, self.callback)
         rospy.spin()
 
 if __name__ == "__main__":
