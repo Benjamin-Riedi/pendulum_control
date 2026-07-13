@@ -4,11 +4,23 @@
     <node pkg="pendulum_control" type="kalman_filter.py" name="kalman_filter_node_bottom" output="screen">
         <param name="calculate_gains" value="true" />
         <param name="matrices_path" value="data/matrices" />
-        <param name="B_path" value="/Bcb.csv" />
-        <param name="subsystem_topic" value="/bottom/y" />
-        <param name="pub_topic" value="/bottom/v_sp" />
+        <param name="B_path" value="/Bct.csv" />
+        <param name="subsystem_topic" value="/top/y" />
+        <param name="pub_topic" value="/top/v_sp" />
     </node>
     <node pkg="pendulum_control" type="dynamics_simulator.py" name="dynamics_simulator_node_top" output="screen">
         <param name="matrices_path" value="data/matrices" />
     </node>
+    <!-- <node
+        pkg="ethercat_ros_configurator"
+        type="convert_units_read.py"
+        name="convert_units_read"
+        output="screen"
+    />
+    <node
+        pkg="ethercat_ros_configurator"
+        type="convert_units_write.py"
+        name="convert_units_write"
+        output="screen"
+    /> -->
 </launch>

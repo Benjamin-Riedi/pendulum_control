@@ -41,3 +41,7 @@ topics:
 matrices:
   bottom: "Bcb.csv"
   top: "Bct.csv"
+
+limits:
+  x: 51000
+  dx: 10000

@@ -14,11 +14,9 @@ class DynamicsSimulatorNode:
         self.package_path = rospack.get_path('pendulum_control')
         self.read_params()
         self.read_matrices()
-        self.pub_output = rospy.Publisher('/bottom/y', ArrayStamped, queue_size=1)
-        self.pub_state = rospy.Publisher('/bottom/state', ArrayStamped, queue_size=1)
+        self.pub_output = rospy.Publisher('/top/y', ArrayStamped, queue_size=1)
+        self.pub_state = rospy.Publisher('/top/state', ArrayStamped, queue_size=1)
         self.x = np.zeros((self.A.shape[0], 1))  # state vector
-
-        # print(self.A, self.B, self.C)
 
 
     def read_params(self):
@@ -35,7 +33,7 @@ class DynamicsSimulatorNode:
     def read_matrices(self):
         """Read matrices from CSV files"""
         self.A = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Ac.csv", delimiter=","))
-        self.B = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Bcb.csv", delimiter=",")).reshape(-1,1)
+        self.B = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Bct.csv", delimiter=",")).reshape(-1,1)
         self.C = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Cc.csv", delimiter=","))
 
         self.Qr = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Qr.csv", delimiter=","))
@@ -71,15 +69,12 @@ class DynamicsSimulatorNode:
     def input_callback(self, msg):
         """Callback function to receive control input"""
         self.u = np.array(msg.scalar).reshape(1,1)
-        # print("Input:", self.u)
-        # print("State:", self.x)
         self.output = self.dynamics_step()
         print("Output:", self.output)
         # wait to simulate sensor delay
         rospy.sleep(self.Ts)
         pubArray(self.pub_output, self.output, rospy.Time.now())
         pubArray(self.pub_state, self.x, rospy.Time.now())
-        # self.pub_state.publish(ArrayStamped(vector=self.output))
 
 
     def dynamics_step(self):
@@ -91,8 +86,9 @@ class DynamicsSimulatorNode:
 
     def run(self):
         """Main loop to simulate dynamics"""
-        rospy.Subscriber('/bottom/u', ScalarStamped, self.input_callback)
-        rospy.Subscriber('/bottom/set_state', ArrayStamped, self.set_state_callback) # for testing, this should be removed in the final version
+        rospy.Subscriber('/top/u', ScalarStamped, self.input_callback)
+        # rospy.Subscriber('/Maxon_Motor_top/state', ArrayStamped, self.motor_callback)
+        rospy.Subscriber('/top/set_state', ArrayStamped, self.set_state_callback) # for testing, this should be removed in the final version
         rospy.spin()
 
 if __name__ == '__main__':

@@ -8,12 +8,12 @@ from utils import bag_to_pd, find_bag
 
 def plot_state(data_frames, root):
 
-    topics = ['/bottom/state']
+    topics = ['/top/state', '/top/v_sp', '/ethercat_master/Maxon_Motor_top/reading']
 
     for topic in topics:
         if topic not in data_frames:
             print(f"Topic {topic} not found in data frames.")
-            pass
+            continue
 
         fig, (axx, axd) = plt.subplots(2, 1, sharex=True)
 
@@ -101,9 +101,9 @@ def main():
     else:
         exp = os.getcwd()
         bag_file = find_bag(exp)
-    topic_name = '/bottom/state'  # replace with your topic name
+    topic_names = ['/top/state', '/top/v_sp', '/ethercat_master/Maxon_Motor_top/reading']  # replace with your topic name
     bag_file = find_bag(exp)
-    data_frames = bag_to_pd(exp, [topic_name])
+    data_frames = bag_to_pd(exp, topic_names)
     plot_state(data_frames, exp)
     if not bag_file:
         return

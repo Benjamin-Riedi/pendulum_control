@@ -56,7 +56,7 @@ class LQGNode:
 
     def init_publishers(self):
         self.pub_v = rospy.Publisher(self.pub_topic, ScalarStamped, queue_size=1)
-        self.pub_u = rospy.Publisher('/bottom/u', ScalarStamped, queue_size=1)
+        self.pub_u = rospy.Publisher('/top/u', ScalarStamped, queue_size=1)
 
         self.v_sp_msg = ScalarStamped()
         # add state estimation error
@@ -115,6 +115,7 @@ class LQGNode:
         u_k goes into the system and also calculates the a priori state x_k+1. The a priori estimate x_k+1 is updated with the next measurement y_k+1.
         """
         self.y = subArray(msg)
+        self.time = msg.header.stamp
         self.x = self.a_posteriori_estimate()
         self.u = self.state_feedback_step()
 
@@ -126,8 +127,11 @@ class LQGNode:
         self.v_sp_msg.scalar = self.integrate()
         self.pub_v.publish(self.v_sp_msg)
 
-        self.u_prev.scalar = self.u # cast to float?
-        self.u_prev.header.stamp = self.time
+        self.v_prev.scalar = self.v_sp_msg.scalar
+        self.v_prev.header.stamp = self.time
+
+        # self.u_prev.scalar = self.u # cast to float?
+        # self.u_prev.header.stamp = self.time
         #
         self.x = self.a_priori_estimate()
     
@@ -146,17 +150,26 @@ class LQGNode:
         return np.asarray(-self.K @ self.x)
         return -self.K @ self.x
     
+    # def integrate(self):
+    #     """Integrate the control input u_k over time to get the desired velocity setpoint v_sp. First-order integration is used."""
+    #     if not hasattr(self, 'u_prev'):
+    #         self.u_prev = ScalarStamped(scalar=0.0)
+    #         self.u_prev.header.stamp = self.time - rospy.Duration(0,10000000) # maybe use variable self.Ts
+    #     dt = (self.time - self.u_prev.header.stamp).to_sec()
+    #     return 0.5 * dt * (self.u + self.u_prev.scalar)
+    
     def integrate(self):
         """Integrate the control input u_k over time to get the desired velocity setpoint v_sp. First-order integration is used."""
-        if not hasattr(self, 'u_prev'):
-            self.u_prev = ScalarStamped(scalar=0.0)
-            self.u_prev.header.stamp = self.time - rospy.Duration(0,10000000) # maybe use variable self.Ts
-        dt = (self.time - self.u_prev.header.stamp).to_sec()
-        return 0.5 * dt * (self.u + self.u_prev.scalar)
+        if not hasattr(self, 'v_prev'):
+            self.v_prev = ScalarStamped(scalar=0.0)
+            self.v_prev.header.stamp = self.time - rospy.Duration(0,10000000) # maybe use variable self.Ts
+        dt = (self.time - self.v_prev.header.stamp).to_sec()
+        print("dt:", dt, "u:", self.u, "v_prev:", self.v_prev.scalar)
+        return self.u * dt + self.v_prev.scalar
     
     def run(self):
         rospy.Subscriber(self.output_topic, ArrayStamped, self.callback)
-        rospy.Subscriber('/bottom/set_state', ArrayStamped, self.set_state_callback)
+        rospy.Subscriber('/top/set_state', ArrayStamped, self.set_state_callback)
         rospy.spin()
 
 if __name__ == "__main__":

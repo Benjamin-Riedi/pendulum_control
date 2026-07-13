@@ -125,13 +125,11 @@ class InvertedPendulumControlNode:
         """Callback function for bottom motor state data"""
         self.x = msg.vector[0]
         self.xD = msg.vector[1]
-        pass
 
     def callback_top(self, msg):
         """Callback function for top motor state data"""
         self.y = msg.vector[0]
         self.yD = msg.vector[1]
-        pass
 
 
     def run(self):
