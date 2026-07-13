@@ -87,14 +87,14 @@ class InvertedPendulumControlNode:
 
     def get_state(self):
         """Concatenate state variables into one vector per subsystem for publishing"""
-        bottom = np.array([self.x, self.xD, self.phi, self.phiD]).reshape(-1,1)
-        top = np.array([self.y, self.yD, self.theta, self.thetaD]).reshape(-1,1)
+        bottom = np.array([self.x, self.phi, self.xD, self.phiD]).reshape(-1,1)
+        top = np.array([self.y, self.theta, self.yD, self.thetaD]).reshape(-1,1)
         return bottom, top
     
     def get_measurement(self):
         """Concatenate measurement variables into one vector per subsystem for publishing"""
-        bottom = np.array([self.x, self.xD, self.phi]).reshape(-1,1)
-        top = np.array([self.y, self.yD, self.theta]).reshape(-1,1)
+        bottom = np.array([self.x, self.phi, self.xD]).reshape(-1,1)
+        top = np.array([self.y, self.theta, self.yD]).reshape(-1,1)
         return bottom, top
     
     def finite_difference(self, angles, dt):

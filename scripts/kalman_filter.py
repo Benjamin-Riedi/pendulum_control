@@ -105,6 +105,10 @@ class LQGNode:
         print(L)
         return L
 
+    def set_state_callback(self, msg):
+        """For testing purposes, set the state estimate x to a specific value."""
+        self.x = subArray(msg)
+    
     def callback(self, msg):
         """
         msg is measurement y_k (x,xD,phi), we use this to estimate the a posteriori state x_k. This goes into the lqr and gets u_k.
@@ -129,14 +133,6 @@ class LQGNode:
     
     def a_posteriori_estimate(self):
         """This is the state estimate after incorporating the latest measurement y_k."""
-        # print all variables for debugging
-        # print("Cd", self.Cd)
-        # print("x", self.x)
-        # print("y", self.y)
-        # print("L", self.L)
-        # print("Cd @ x", self.Cd @ self.x)
-        # print("y - Cd @ x", self.y - self.Cd @ self.x)
-        # print("L @ (y - Cd @ x)", self.L @ (self.y - self.Cd @ self.x))
         return np.asarray(self.x + self.L @ (self.y - self.Cd @ self.x))
         return self.x + self.L @ (self.y - self.Cd @ self.x)
     
@@ -160,6 +156,7 @@ class LQGNode:
     
     def run(self):
         rospy.Subscriber(self.output_topic, ArrayStamped, self.callback)
+        rospy.Subscriber('/bottom/set_state', ArrayStamped, self.set_state_callback)
         rospy.spin()
 
 if __name__ == "__main__":

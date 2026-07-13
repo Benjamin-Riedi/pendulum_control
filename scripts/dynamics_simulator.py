@@ -5,7 +5,7 @@ import numpy as np
 import control
 
 from pendulum_control.common import * # this imports the common messages
-from pendulum_control import pubArray
+from pendulum_control import pubArray, subArray
 
 class DynamicsSimulatorNode:
     def __init__(self):
@@ -58,6 +58,16 @@ class DynamicsSimulatorNode:
         self.Bd = sys_d.B
         self.Cd = sys_d.C
 
+        print("Ad:", self.Ad, "Bd:", self.Bd, "Cd:", self.Cd)
+
+    def set_state_callback(self, msg):
+        """For testing purposes, set the state estimate x to a specific value."""
+        self.x = subArray(msg)
+        self.y = np.asarray(self.Cd @ self.x)  # update measurement based on new state
+
+        pubArray(self.pub_state, self.x, rospy.Time.now())
+        pubArray(self.pub_output, self.y, rospy.Time.now())
+
     def input_callback(self, msg):
         """Callback function to receive control input"""
         self.u = np.array(msg.scalar).reshape(1,1)
@@ -82,6 +92,7 @@ class DynamicsSimulatorNode:
     def run(self):
         """Main loop to simulate dynamics"""
         rospy.Subscriber('/bottom/u', ScalarStamped, self.input_callback)
+        rospy.Subscriber('/bottom/set_state', ArrayStamped, self.set_state_callback) # for testing, this should be removed in the final version
         rospy.spin()
 
 if __name__ == '__main__':

@@ -1,4 +1,7 @@
 import numpy as np
+import rosbag
+import pandas as pd
+import os
 from pendulum_control.msg import ArrayStamped
 
 def pubArray(pub, array, timestamp=None):
@@ -13,3 +16,30 @@ def pubArray(pub, array, timestamp=None):
 def subArray(msg):
     array = np.array(msg.vector).reshape(msg.shape)
     return array
+
+def bag_to_pd(root, topics):
+    """Read specified topics from a rosbag and return a dictionary of pandas DataFrames."""
+    bag_file = find_bag(root)
+    bag = rosbag.Bag(bag_file,'r')
+    start_time = bag.get_start_time() * 1e9 # convert to ns
+
+    row_lists = {topic: [] for topic in topics}
+
+    for topic, msg, t in bag.read_messages(topics=topics):
+        dict1 = {}
+        dict1['time'] = t.to_nsec() - start_time
+        for field in msg.__slots__:
+            dict1[field] = getattr(msg, field)
+        row_lists[topic].append(dict1)
+
+    data_frames = {topic: pd.DataFrame(row_lists[topic]) for topic in topics}
+    return data_frames
+
+def find_bag(exp):
+    """Find the rosbag file in an experiment folder."""
+    for file in os.listdir(exp):
+        if file.endswith(".bag"):
+            bag_file = os.path.join(exp, file)
+            return bag_file
+    print("No bag file found in %s, skipping experiment" % exp)
+    return None
