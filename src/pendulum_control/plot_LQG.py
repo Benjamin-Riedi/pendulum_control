@@ -115,8 +115,8 @@ def plot_state(data_frames, root, topics):
         axd.set_ylabel('Velocity [m/s]', color=colors[0])
         axd.set_xlabel('time [s]')
 
-        axx.plot(time, x, label=topic.strip('/state') + ' x', color=colors[0])
-        axd.plot(time, dx, label=topic.strip('/state') + ' dx', color=colors[0])
+        axx.plot(time, x, label=topic.replace('state', '').strip('/') + ' x', color=colors[0])
+        axd.plot(time, dx, label=topic.replace('state', '').strip('/') + ' dx', color=colors[0])
 
         axx.tick_params(axis='y', labelcolor=colors[0])
         axd.tick_params(axis='y', labelcolor=colors[0])
@@ -134,8 +134,8 @@ def plot_state(data_frames, root, topics):
         axp.set_ylabel('Angle [deg]', color=colors[1])
         axdp.set_ylabel('Angular Velocity [deg/s]', color=colors[1])
 
-        axp.plot(time, phi, label=topic.strip('/state') + ' phi', color=colors[1])
-        axdp.plot(time, dphi, label=topic.strip('/state') + ' dphi', color=colors[1])
+        axp.plot(time, phi, label=topic.replace('state', '').strip('/') + ' phi', color=colors[1])
+        axdp.plot(time, dphi, label=topic.replace('state', '').strip('/') + ' dphi', color=colors[1])
 
         axp.tick_params(axis='y', labelcolor=colors[1])
         axdp.tick_params(axis='y', labelcolor=colors[1])
@@ -159,7 +159,7 @@ def plot_state(data_frames, root, topics):
         fig.tight_layout()
         fig.set_size_inches(15, 9)
         fig.suptitle(f'Initial State: (x,phi,dx,dphi) = ({x[0]:.2f}m, {phi[0]:.2f}°, {dx[0]:.2f}m/s, {dphi[0]:.2f}°/s)', fontsize=16) # maybe add degrees for phi and dphi
-        plt.savefig(os.path.join(root, topic.strip('/state') + '_state.png'))
+        plt.savefig(os.path.join(root, topic.replace('state', '').strip('/') + '_state.png'))
         plt.show()
 
 def main():
