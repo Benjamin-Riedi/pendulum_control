@@ -165,6 +165,7 @@ catkin_install_python(PROGRAMS
   scripts/kalman_filter.py
   scripts/state_feedback.py
   scripts/dynamics_simulator.py
+  scripts/publisher.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

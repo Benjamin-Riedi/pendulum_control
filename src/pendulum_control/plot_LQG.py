@@ -6,26 +6,100 @@ import os
 
 from utils import bag_to_pd, find_bag
 
-def plot_state(data_frames, root):
-
-    topics = ['/top/state', '/top/v_sp', '/ethercat_master/Maxon_Motor_top/reading']
-
+def extract_array(data_frames, topics):
     for topic in topics:
         if topic not in data_frames:
             print(f"Topic {topic} not found in data frames.")
             continue
-
-        fig, (axx, axd) = plt.subplots(2, 1, sharex=True)
-
         df = data_frames[topic]
         time = df['time'].to_numpy() * 1e-9 # convert to seconds
         vectors = df['vector']
 
-        # generalize topic names
-        x = np.array([row[0] for row in vectors])
-        phi = np.rad2deg(np.array([row[1] for row in vectors]))
-        dx = np.array([row[2] for row in vectors])
-        dphi = np.rad2deg(np.array([row[3] for row in vectors]))
+        return_list = []
+
+        for i in range(len(vectors[0])):
+            return_list.append(np.array([row[i] for row in vectors]))
+
+    return return_list, time
+
+def extract_velocity(data_frames, topics):
+    for topic in topics:
+        if topic not in data_frames:
+            print(f"Topic {topic} not found in data frames.")
+            continue
+        df = data_frames[topic]
+        time = df['time'].to_numpy() * 1e-9 # convert to seconds
+        actualVelocity = df['actualVelocity'].to_numpy()
+        
+    return actualVelocity, time
+
+def extract_scalar(data_frames, topics):
+    for topic in topics:
+        if topic not in data_frames:
+            print(f"Topic {topic} not found in data frames.")
+            continue
+        df = data_frames[topic]
+        time = df['time'].to_numpy() * 1e-9 # convert to seconds
+        scalar = df['scalar'].to_numpy()
+        
+    return scalar, time
+
+def plot_velocity(data_frames, root, top):
+    if top:
+        actualVelocity, time_r = extract_velocity(data_frames, ['/ethercat_master/Maxon_Motor_top/reading'])
+        v_sp, time_sp = extract_scalar(data_frames, ['/top/v_sp'])
+    else:
+        actualVelocity, time_r = extract_velocity(data_frames, ['/ethercat_master/Maxon_Motor_bottom/reading'])
+        v_sp, time_sp = extract_scalar(data_frames, ['/bottom/v_sp'])
+
+    v_sp *= 1200 # convert to rpm
+    mask = (time_r >= time_sp[0]) & (time_r <= time_sp[-1])
+
+    v_sp_interp = np.interp(time_r[mask], time_sp, v_sp)
+    error = actualVelocity[mask] - v_sp_interp
+
+    # ax_err.plot(time_r[mask], error)
+    # v_sp_interp = np.interp(time_r, time_sp, v_sp)
+
+    # error = actualVelocity - v_sp_interp
+
+    # this calculates the delay between the setpoint and the actual velocity using cross-correlation
+    # i didn't write this and have no idea if or how it works
+    corr = np.correlate(
+    actualVelocity - np.mean(actualVelocity),
+    v_sp_interp - np.mean(v_sp_interp),
+    mode='full')
+
+    lag = corr.argmax() - (len(actualVelocity) - 1)
+    delay = lag * np.mean(np.diff(time_r))
+
+    fig, (axv, axe) = plt.subplots(2, 1, sharex=True)
+    axv.plot(time_r, actualVelocity, label='Actual Velocity', color='tab:blue')
+    axv.plot(time_sp, v_sp, label='Velocity Setpoint', color='tab:red', linestyle='--')
+    axv.set_xlabel('Time [s]')
+    axv.set_ylabel('Velocity [rpm]')
+    axv.legend()
+    axv.set_title('Velocities')
+
+    axe.plot(time_r[mask], error, label='Velocity Error', color='tab:green')
+    axe.set_xlabel('Time [s]')
+    axe.set_ylabel('Error [rpm]')
+    axe.set_title(f'Velocity Error. Delay is {delay:.2f} s')
+    fig.tight_layout()
+    fig.set_size_inches(15, 9)
+    plt.savefig(os.path.join(root, 'velocity_tracking.png'))
+    plt.show()
+
+
+def plot_state(data_frames, root, topics):
+
+    for topic in topics:
+
+        fig, (axx, axd) = plt.subplots(2, 1, sharex=True)
+
+        (x, phi, dx, dphi), time = extract_array(data_frames, [topic])
+        np.rad2deg(phi,out=phi)
+        np.rad2deg(dphi,out=dphi)
 
         colors = ['tab:blue', 'tab:red']
 
@@ -85,7 +159,7 @@ def plot_state(data_frames, root):
 
         fig.tight_layout()
         fig.set_size_inches(15, 9)
-        fig.suptitle(f'Initial State: (x,phi,dx,dphi) = {vectors[0]}', fontsize=16) # maybe add degrees for phi and dphi
+        fig.suptitle(f'Initial State: (x,phi,dx,dphi) = ({x[0]:.2f}m, {phi[0]:.2f}°, {dx[0]:.2f}m/s, {dphi[0]:.2f}°/s)', fontsize=16) # maybe add degrees for phi and dphi
         plt.savefig(os.path.join(root, topic.strip('/state') + '_state.png'))
         plt.show()
 
@@ -104,7 +178,8 @@ def main():
     topic_names = ['/top/state', '/top/v_sp', '/ethercat_master/Maxon_Motor_top/reading']  # replace with your topic name
     bag_file = find_bag(exp)
     data_frames = bag_to_pd(exp, topic_names)
-    plot_state(data_frames, exp)
+    # plot_state(data_frames, exp, topic_names[0])
+    plot_velocity(data_frames, exp, top=True)
     if not bag_file:
         return
 

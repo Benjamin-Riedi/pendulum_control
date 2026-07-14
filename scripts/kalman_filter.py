@@ -23,8 +23,10 @@ class LQGNode:
         self.b_calculate_gains = rospy.get_param("~calculate_gains", False)  # if true, provide A,B,Q,R to solve ARE and get K, else provide K
         self.matrices_param = rospy.get_param('~matrices_path')
         self.B_file_path = rospy.get_param("~B_path")
-        self.output_topic = rospy.get_param('~subsystem_topic')
-        self.pub_topic = rospy.get_param('~pub_topic')
+        self.input_topic = rospy.get_param('~input_topic')
+        self.pub_v_topic = rospy.get_param('~pub_v_topic')
+        self.pub_u_topic = rospy.get_param('~pub_u_topic')
+        self.set_state_topic = rospy.get_param('~set_state_topic')
         self.Ts = 0.01
 
         if os.path.isabs(self.matrices_param):
@@ -55,8 +57,8 @@ class LQGNode:
             self.L = self.calculate_L()
 
     def init_publishers(self):
-        self.pub_v = rospy.Publisher(self.pub_topic, ScalarStamped, queue_size=1)
-        self.pub_u = rospy.Publisher('/top/u', ScalarStamped, queue_size=1)
+        self.pub_v = rospy.Publisher(self.pub_v_topic, ScalarStamped, queue_size=1)
+        self.pub_u = rospy.Publisher(self.pub_u_topic, ScalarStamped, queue_size=1)
 
         self.v_sp_msg = ScalarStamped()
         # add state estimation error
@@ -138,17 +140,14 @@ class LQGNode:
     def a_posteriori_estimate(self):
         """This is the state estimate after incorporating the latest measurement y_k."""
         return np.asarray(self.x + self.L @ (self.y - self.Cd @ self.x))
-        return self.x + self.L @ (self.y - self.Cd @ self.x)
     
     def a_priori_estimate(self):
         """This is the state estimate considering only the system dynamics and the previous control input u_k."""
         return np.asarray(self.Ad @ self.x + self.Bd @ self.u)
-        return self.Ad @ self.x + self.Bd @ self.u
     
     def state_feedback_step(self):
         """Calculate the control input u_k based on the current state estimate x_k."""
         return np.asarray(-self.K @ self.x)
-        return -self.K @ self.x
     
     # def integrate(self):
     #     """Integrate the control input u_k over time to get the desired velocity setpoint v_sp. First-order integration is used."""
@@ -168,8 +167,8 @@ class LQGNode:
         return self.u * dt + self.v_prev.scalar
     
     def run(self):
-        rospy.Subscriber(self.output_topic, ArrayStamped, self.callback)
-        rospy.Subscriber('/top/set_state', ArrayStamped, self.set_state_callback)
+        rospy.Subscriber(self.input_topic, ArrayStamped, self.callback)
+        rospy.Subscriber(self.set_state_topic, ArrayStamped, self.set_state_callback)
         rospy.spin()
 
 if __name__ == "__main__":

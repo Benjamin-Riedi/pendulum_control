@@ -14,14 +14,18 @@ class DynamicsSimulatorNode:
         self.package_path = rospack.get_path('pendulum_control')
         self.read_params()
         self.read_matrices()
-        self.pub_output = rospy.Publisher('/top/y', ArrayStamped, queue_size=1)
-        self.pub_state = rospy.Publisher('/top/state', ArrayStamped, queue_size=1)
+        self.init_publishers()
+
         self.x = np.zeros((self.A.shape[0], 1))  # state vector
 
 
     def read_params(self):
         """Read parameters from launch file"""
         self.matrices_param = rospy.get_param('~matrices_path')
+        self.input_topic = rospy.get_param('~input_topic')
+        self.pub_v_topic = rospy.get_param('~pub_v_topic')
+        self.pub_u_topic = rospy.get_param('~pub_u_topic')
+        self.set_state_topic = rospy.get_param('~set_state_topic')
 
         if os.path.isabs(self.matrices_param):
             self.matrices_path = self.matrices_param
@@ -63,8 +67,8 @@ class DynamicsSimulatorNode:
         self.x = subArray(msg)
         self.y = np.asarray(self.Cd @ self.x)  # update measurement based on new state
 
-        pubArray(self.pub_state, self.x, rospy.Time.now())
-        pubArray(self.pub_output, self.y, rospy.Time.now())
+        pubArray(self.state_top_pub, self.x, rospy.Time.now())
+        pubArray(self.output_top_pub, self.y, rospy.Time.now())
 
     def input_callback(self, msg):
         """Callback function to receive control input"""
@@ -73,8 +77,8 @@ class DynamicsSimulatorNode:
         print("Output:", self.output)
         # wait to simulate sensor delay
         rospy.sleep(self.Ts)
-        pubArray(self.pub_output, self.output, rospy.Time.now())
-        pubArray(self.pub_state, self.x, rospy.Time.now())
+        pubArray(self.output_top_pub, self.output, rospy.Time.now())
+        pubArray(self.state_top_pub, self.x, rospy.Time.now())
 
 
     def dynamics_step(self):
