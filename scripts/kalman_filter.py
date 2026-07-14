@@ -14,53 +14,56 @@ class LQGNode:
         self.package_path = rospack.get_path('pendulum_control')
         self.read_params()
         self.read_matrices()
+        self.init_topics()
         self.init_publishers()
         self.init_variables()
 
-
     def read_params(self):
         """Read parameters from launch file"""
-        self.b_calculate_gains = rospy.get_param("~calculate_gains", False)  # if true, provide A,B,Q,R to solve ARE and get K, else provide K
-        self.matrices_param = rospy.get_param('~matrices_path')
-        self.B_file_path = rospy.get_param("~B_path")
-        self.input_topic = rospy.get_param('~input_topic')
-        self.pub_v_topic = rospy.get_param('~pub_v_topic')
-        self.pub_u_topic = rospy.get_param('~pub_u_topic')
-        self.set_state_topic = rospy.get_param('~set_state_topic')
-        self.Ts = 0.01
+        self.b_calculate_gains = rospy.get_param("~calculate_gains", True)  # if true, provide A,B,Q,R to solve ARE and get K, else provide K
+        self.matrices_rel = rospy.get_param('/matrices_path')
+        self.b_matrix = rospy.get_param('B_matrix')
+        self.Ts = rospy.get_param('/Ts')
 
-        if os.path.isabs(self.matrices_param):
-            self.matrices_path = self.matrices_param
+        if os.path.isabs(self.matrices_rel):
+            self.matrices_path = self.matrices_rel
         else:
-            self.matrices_path = os.path.join(self.package_path, self.matrices_param)
-
+            self.matrices_path = os.path.join(self.package_path, self.matrices_rel)
 
     def read_matrices(self):
         """Read matrices from CSV files"""
-        self.A = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Ac.csv", delimiter=","))
-        self.B = np.atleast_2d(np.genfromtxt(self.matrices_path + self.B_file_path, delimiter=",")).reshape(-1,1)
-        self.C = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Cc.csv", delimiter=","))
+        self.A = np.atleast_2d(np.genfromtxt(self.matrices_path + "Ac.csv", delimiter=","))
+        self.B = np.atleast_2d(np.genfromtxt(self.matrices_path + self.b_matrix, delimiter=",")).reshape(-1,1)
+        self.C = np.atleast_2d(np.genfromtxt(self.matrices_path + "Cc.csv", delimiter=","))
 
-        self.Qr = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Qr.csv", delimiter=","))
-        self.Rr = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Rr.csv", delimiter=","))
+        self.Qr = np.atleast_2d(np.genfromtxt(self.matrices_path + "Qr.csv", delimiter=","))
+        self.Rr = np.atleast_2d(np.genfromtxt(self.matrices_path + "Rr.csv", delimiter=","))
 
-        self.Qe = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Qe.csv", delimiter=","))
-        self.Re = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Re.csv", delimiter=","))
+        self.Qe = np.atleast_2d(np.genfromtxt(self.matrices_path + "Qe.csv", delimiter=","))
+        self.Re = np.atleast_2d(np.genfromtxt(self.matrices_path + "Re.csv", delimiter=","))
 
         self.discretize()
 
         if not self.b_calculate_gains:
-            self.K = np.atleast_2d(np.genfromtxt(self.matrices_path + "/K.csv", delimiter=","))
-            self.L = np.atleast_2d(np.genfromtxt(self.matrices_path + "/L.csv", delimiter=","))
+            self.K = np.atleast_2d(np.genfromtxt(self.matrices_path + "K.csv", delimiter=","))
+            self.L = np.atleast_2d(np.genfromtxt(self.matrices_path + "L.csv", delimiter=","))
         else:
             self.K = self.calculate_K()
             self.L = self.calculate_L()
 
+    def init_topics(self):
+        self.v_topic = 'v_sp'
+        self.u_topic = 'u'
+        self.output_topic = 'y'
+        self.state_topic = 'state'
+        self.set_state_topic = 'set_state'
+
     def init_publishers(self):
-        self.pub_v = rospy.Publisher(self.pub_v_topic, ScalarStamped, queue_size=1)
-        self.pub_u = rospy.Publisher(self.pub_u_topic, ScalarStamped, queue_size=1)
+        self.v_pub = rospy.Publisher(self.v_topic, ScalarStamped, queue_size=1)
+        self.u_pub = rospy.Publisher(self.u_topic, ScalarStamped, queue_size=1)
 
         self.v_sp_msg = ScalarStamped()
+        self.u_msg = ScalarStamped()
         # add state estimation error
 
     def init_variables(self):
@@ -121,13 +124,12 @@ class LQGNode:
         self.x = self.a_posteriori_estimate()
         self.u = self.state_feedback_step()
 
-        u_msg = ScalarStamped()
-        u_msg.scalar = self.u.item() # convert 1x1 array to float
-        u_msg.header.stamp = self.time
-        self.pub_u.publish(u_msg)
+        self.u_msg.scalar = self.u.item() # convert 1x1 array to float
+        self.u_msg.header.stamp = self.time
+        self.u_pub.publish(self.u_msg)
 
         self.v_sp_msg.scalar = self.integrate()
-        self.pub_v.publish(self.v_sp_msg)
+        self.v_pub.publish(self.v_sp_msg)
 
         self.v_prev.scalar = self.v_sp_msg.scalar
         self.v_prev.header.stamp = self.time

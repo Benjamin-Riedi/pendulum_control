@@ -6,7 +6,7 @@ topics:
   vicon:
     angles: "/vicon/angles"
     anglesD: "/vicon/anglesD"
-# these might change depending on the vicon setup
+  # these might change depending on the vicon setup
     state: "/vicon/benjamin_v2/Root"
     world: "/vicon/benjamin_v2/World"
   
@@ -21,26 +21,30 @@ topics:
     state: 
       bottom: "/bottom/state"
       top: "/top/state"
+    set_state:
+      bottom: "/bottom/set_state"
+      top: "/top/set_state"
     measurement:
       bottom: "/bottom/y"
       top: "/top/y"
     command:
       bottom: "/bottom/v_sp"
       top: "/top/v_sp"
-  
-  # the following are set by the ethercat_ros_configurator package. Could cause problems if setup.yaml/these values are changed
-  Maxon_Motor_bottom:
+
+bottom:
+  B_matrix: "Bcb.csv"
+  Maxon_Motor:
     command: "/ethercat_master/Maxon_Motor_bottom/command"
     reading: "/ethercat_master/Maxon_Motor_bottom/reading"
     state: "/Maxon_Motor_bottom/state"
-  Maxon_Motor_top:
+top:
+  B_matrix: "Bct.csv"
+  Maxon_Motor:
     command: "/ethercat_master/Maxon_Motor_top/command"
     reading: "/ethercat_master/Maxon_Motor_top/reading"
     state: "/Maxon_Motor_top/state"
 
-matrices:
-  bottom: "Bcb.csv"
-  top: "Bct.csv"
+matrices_path: "data/matrices"
 
 limits:
   x: 51000

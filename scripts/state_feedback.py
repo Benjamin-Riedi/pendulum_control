@@ -15,26 +15,27 @@ class StateFeedbackNode:
 
     def read_params(self):
         self.b_calculate_K = rospy.get_param("~calculate_K", False)  # if true, provide A,B,Q,R to solve ARE and get K, else provide K
-        self.matrices_path = rospy.get_param('~matrices_path')
-        self.B_file_path = rospy.get_param("~B_path")
-        self.state_topic = rospy.get_param('~subsystem_topic')
-        self.pub_topic = rospy.get_param('~pub_topic')
-
+        self.matrices_path = rospy.get_param('/matrices_path')
+        self.B_file_path = rospy.get_param("B_matrix")
 
     def read_matrices(self):
-        self.A = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Ac.csv", delimiter=","))
+        self.A = np.atleast_2d(np.genfromtxt(self.matrices_path + "Ac.csv", delimiter=","))
         self.B = np.atleast_2d(np.genfromtxt(self.matrices_path + self.B_file_path, delimiter=","))
 
-        self.Q = np.atleast_2d(np.genfromtxt(self.matrices_path + "/Q.csv", delimiter=","))
-        self.R = np.atleast_2d(np.genfromtxt(self.matrices_path + "/R.csv", delimiter=","))
+        self.Q = np.atleast_2d(np.genfromtxt(self.matrices_path + "Q.csv", delimiter=","))
+        self.R = np.atleast_2d(np.genfromtxt(self.matrices_path + "R.csv", delimiter=","))
 
         if not self.b_calculate_K:
-            self.K = np.atleast_2d(np.genfromtxt(self.matrices_path + "/K.csv", delimiter=","))
+            self.K = np.atleast_2d(np.genfromtxt(self.matrices_path + "K.csv", delimiter=","))
         else:
             self.K = self.calculate_K()
+
+    def init_topics(self):
+        self.state_topic = 'state'
+        self.v_topic = 'v_sp'
         
     def init_publishers(self):
-        self.pub_v = rospy.Publisher(self.pub_topic, ScalarStamped, queue_size=1)
+        self.v_pub = rospy.Publisher(self.v_topic, ScalarStamped, queue_size=1)
         self.v_sp_msg = ScalarStamped()
         # publish u for introspection?
 
@@ -70,7 +71,7 @@ class StateFeedbackNode:
         self.u = -self.K @ msg.vector
 
         self.v_sp_msg.scalar = self.integrate()
-        self.pub_v.publish(self.v_sp_msg)
+        self.v_pub.publish(self.v_sp_msg)
 
         self.u_prev.scalar = self.u
         self.u_prev.header.stamp = self.time
