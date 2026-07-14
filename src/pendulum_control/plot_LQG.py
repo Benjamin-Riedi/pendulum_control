@@ -6,19 +6,18 @@ import os
 
 from utils import bag_to_pd, find_bag
 
-def extract_array(data_frames, topics):
-    for topic in topics:
-        if topic not in data_frames:
-            print(f"Topic {topic} not found in data frames.")
-            continue
-        df = data_frames[topic]
-        time = df['time'].to_numpy() * 1e-9 # convert to seconds
-        vectors = df['vector']
+def extract_array(data_frames, topic):
+    if topic not in data_frames:
+        print(f"Topic {topic} not found in data frames.")
+        return [], []
+    df = data_frames[topic]
+    time = df['time'].to_numpy() * 1e-9 # convert to seconds
+    vectors = df['vector']
 
-        return_list = []
+    return_list = []
 
-        for i in range(len(vectors[0])):
-            return_list.append(np.array([row[i] for row in vectors]))
+    for i in range(len(vectors[0])):
+        return_list.append(np.array([row[i] for row in vectors]))
 
     return return_list, time
 
@@ -97,7 +96,7 @@ def plot_state(data_frames, root, topics):
 
         fig, (axx, axd) = plt.subplots(2, 1, sharex=True)
 
-        (x, phi, dx, dphi), time = extract_array(data_frames, [topic])
+        (x, phi, dx, dphi), time = extract_array(data_frames, topic)
         np.rad2deg(phi,out=phi)
         np.rad2deg(dphi,out=dphi)
 
@@ -175,11 +174,14 @@ def main():
     else:
         exp = os.getcwd()
         bag_file = find_bag(exp)
-    topic_names = ['/top/state', '/top/v_sp', '/ethercat_master/Maxon_Motor_top/reading']  # replace with your topic name
+
+    topic_names = ['/top/state', '/bottom/state', '/top/v_sp', '/bottom/v_sp', '/ethercat_master/Maxon_Motor_top/reading', '/ethercat_master/Maxon_Motor_bottom/reading']  # replace with your topic name
     bag_file = find_bag(exp)
     data_frames = bag_to_pd(exp, topic_names)
-    # plot_state(data_frames, exp, topic_names[0])
+    plot_state(data_frames, exp, topic_names[0:2])
+    # plot_state(data_frames, exp, topic_names[1])
     plot_velocity(data_frames, exp, top=True)
+    plot_velocity(data_frames, exp, top=False)
     if not bag_file:
         return
 

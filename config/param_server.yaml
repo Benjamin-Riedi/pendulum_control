@@ -3,13 +3,13 @@ bottom:
   Maxon_Motor:
     command: "/ethercat_master/Maxon_Motor_bottom/command"
     reading: "/ethercat_master/Maxon_Motor_bottom/reading"
-    state: "/Maxon_Motor_bottom/state"
+    state: "/bottom/Maxon_Motor/state"
 top:
   B_matrix: "Bct.csv"
   Maxon_Motor:
     command: "/ethercat_master/Maxon_Motor_top/command"
     reading: "/ethercat_master/Maxon_Motor_top/reading"
-    state: "/Maxon_Motor_top/state"
+    state: "/top/Maxon_Motor/state"
 
 matrices_path: "data/matrices/"
 

@@ -169,7 +169,7 @@ class LQGNode:
         return self.u * dt + self.v_prev.scalar
     
     def run(self):
-        rospy.Subscriber(self.input_topic, ArrayStamped, self.callback)
+        rospy.Subscriber(self.output_topic, ArrayStamped, self.callback)
         rospy.Subscriber(self.set_state_topic, ArrayStamped, self.set_state_callback)
         rospy.spin()
 

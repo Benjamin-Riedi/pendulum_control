@@ -41,6 +41,7 @@ class DynamicsSimulatorNode:
         self.state_topic = 'state'
         self.u_topic = 'u'
         self.set_state_topic = 'set_state'
+        self.motor_state_topic = 'Maxon_Motor/state'
     
     def read_matrices(self):
         """Read matrices from CSV files"""
@@ -77,6 +78,12 @@ class DynamicsSimulatorNode:
 
         pubArray(self.state_pub, self.x, rospy.Time.now())
         pubArray(self.output_pub, self.y, rospy.Time.now())
+    
+    def motor_state_callback(self, msg):
+        """Callback function to receive motor state"""
+        motor_state = msg
+        self.x[0] = motor_state.vector[0]  # position
+        self.x[2] = motor_state.vector[1]  # velocity
 
     def input_callback(self, msg):
         """Callback function to receive control input"""
@@ -99,7 +106,8 @@ class DynamicsSimulatorNode:
     def run(self):
         """Main loop to simulate dynamics"""
         rospy.Subscriber(self.u_topic, ScalarStamped, self.input_callback)
-        rospy.Subscriber(self.set_state_topic, ArrayStamped, self.set_state_callback) # for testing, this should be removed in the final version
+        rospy.Subscriber(self.motor_state_topic, ArrayStamped, self.motor_state_callback)
+        rospy.Subscriber(self.set_state_topic, ArrayStamped, self.set_state_callback)
         rospy.spin()
 
 if __name__ == '__main__':

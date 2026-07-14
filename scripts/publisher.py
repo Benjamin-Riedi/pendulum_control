@@ -7,15 +7,16 @@ from pendulum_control import set_pos, set_vel, set_torque, set_state
 class Publisher:
     def __init__(self):
         rospy.init_node("command_pub", anonymous=True)
-        self.get_params()
+        self.init_topics()
         self.init_publishers()
-        rospy.sleep(0.5)  # wait for publishers to initialize
+        rospy.sleep(5)  # wait for publishers to initialize
 
     def get_params(self):
-        self.motor_topic = rospy.get_param("Maxon_Motor/command")
         # include params to set separate states
+        pass
 
     def init_topics(self):
+        self.motor_topic = 'Maxon_Motor/command'
         self.set_state_topic = 'set_state'
 
     def init_publishers(self):
