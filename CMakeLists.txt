@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   control_utils
   gelsight_ros
   message_generation
+  std_srvs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -106,7 +107,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES pendulum_control
- CATKIN_DEPENDS rospy std_msgs control_utils gelsight_ros message_generation
+ CATKIN_DEPENDS rospy std_msgs control_utils gelsight_ros message_generation std_srvs
 #  DEPENDS system_lib
 )
 
@@ -166,6 +167,7 @@ catkin_install_python(PROGRAMS
   scripts/state_feedback.py
   scripts/dynamics_simulator.py
   scripts/publisher.py
+  scripts/dashboard.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

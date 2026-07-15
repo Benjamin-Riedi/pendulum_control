@@ -58,6 +58,7 @@
 
   <depend>rospy</depend>
   <depend>std_msgs</depend>
+  <depend>std_srvs</depend>
   <depend>control_utils</depend>
   <depend>gelsight_ros</depend>
   <depend>message_generation</depend>
