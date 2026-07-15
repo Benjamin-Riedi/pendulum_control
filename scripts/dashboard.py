@@ -3,6 +3,7 @@ from std_srvs.srv import Trigger
 
 class Dashboard:
     def __init__(self):
+        rospy.init_node("dashboard")
         self.init_proxies()
 
     def init_proxies(self):
@@ -62,6 +63,5 @@ class Dashboard:
                 break
 
 if __name__ == "__main__":
-    rospy.init_node("dashboard")
     dashboard = Dashboard()
     dashboard.run()
