@@ -49,7 +49,7 @@ class InvertedPendulumControlNode:
         self.activate = Event()
 
         # mode
-        self.vicon = False # set to true if phi & d_phi is calculated from vicon, else they come from the sensor
+        self.vicon = True # set to true if phi & d_phi is calculated from vicon, else they come from the sensor
         # get vicon angle one way or the other and if self.vicon, set the state according to vicon
         # for validation i'll want the vicon stream regardless. (does something break if vicon is not on?)
 
@@ -130,7 +130,8 @@ class InvertedPendulumControlNode:
         rospy.Subscriber(self.motor_state, ArrayStamped, self.motor_callback)
         if self.vicon:
             rospy.Subscriber(self.vicon_angle_topic, ArrayStamped, self.callback_sensor)
-        rospy.Subscriber(self.gelsight_angle_topic, ScalarStamped, self.callback_sensor)
+        else:
+            rospy.Subscriber(self.gelsight_angle_topic, ScalarStamped, self.callback_sensor)
         rospy.spin()
 
 if __name__ == "__main__":

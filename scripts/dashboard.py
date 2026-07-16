@@ -7,14 +7,14 @@ class Dashboard:
         self.init_proxies()
 
     def init_proxies(self):
-        rospy.wait_for_service("/sensor/start", timeout=5)
+        # rospy.wait_for_service("/sensor/start", timeout=5)
         rospy.wait_for_service("/controller/start", timeout=5)
         # rospy.wait_for_service("/homing/start", timeout=5)
 
-        self.start_sensor = rospy.ServiceProxy(
-            "/sensor/start",
-            Trigger
-        )
+        # self.start_sensor = rospy.ServiceProxy(
+        #     "/sensor/start",
+        #     Trigger
+        # )
         # self.start_homing = rospy.ServiceProxy(
         #     "/homing/start",
         #     Trigger

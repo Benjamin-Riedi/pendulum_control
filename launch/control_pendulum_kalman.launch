@@ -3,7 +3,8 @@
     <rosparam command="load" file="$(find pendulum_control)/config/param_server.yaml" />
     <!-- <include file="$(find gelsight_ros)/launch/gelsight.launch" /> -->
     <include file="$(find ethercat_ros_configurator)/launch/test_motor_start.launch" />
-    <include file="$(find gelsight_ros)/launch/gelsight_wo_vicon.launch" />
+    <!-- <include file="$(find gelsight_ros)/launch/gelsight_wo_vicon.launch" /> -->
+
     <include file="$(find ethercat_ros_configurator)/launch/converters.launch" />
 
     <!-- <node pkg="pendulum_control" type="state_feedback.py" name="bottom_state_feedback_node" output="screen">
@@ -18,6 +19,7 @@
         <param name="subsystem_topic" value="/top/state" />
         <param name="pub_topic" value="/top/v_sp" />
     </node> -->
+    <node pkg="gelsight_ros" type="vicon_downsample.py" name="vicon_angle_publisher" output="screen"/>
     <group ns="bottom">
         <node pkg="pendulum_control" type="pendulum_master.py" name="pendulum_control_node_bottom" output="screen">
             <param name="kalman_filter" value="true" />
