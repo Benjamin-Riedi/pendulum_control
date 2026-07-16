@@ -16,6 +16,8 @@ top:
     state: "/top/Maxon_Motor/state"
 
 matrices_path: "data/matrices/"
+gelsight:
+  rgb: "/gelsight/rgb"
 
 limits:
   x: 51000

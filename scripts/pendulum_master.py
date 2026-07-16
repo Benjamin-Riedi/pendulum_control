@@ -2,7 +2,6 @@
 import rospy
 import numpy as np
 
-from gelsight_ros.msg import Angles2dStamped
 from threading import Event
 from pendulum_control.common import * # this imports the common messages
 from pendulum_control import pubArray, subArray
