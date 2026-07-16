@@ -2,7 +2,8 @@
 import rospy
 import numpy as np
 
-from threading import Event
+from threading import Event, Thread
+from std_srvs.srv import Trigger, TriggerResponse
 from pendulum_control.common import * # this imports the common messages
 from pendulum_control import pubArray, subArray
 
@@ -11,18 +12,26 @@ class InvertedPendulumControlNode:
         rospy.init_node('inv_pend_node', anonymous=True)
 
         self.read_ROS_params()
+        self.init_topics()
         self.init_publishers()
         self.init_variables()
 
+        self.calib_srv = rospy.Service(
+            '/controller/start',
+            Trigger,
+            self.service_callback
+        )
+
     def read_ROS_params(self):
         """Load parameters from ROS parameter server"""
-        self.gelsight_angles_topic = rospy.get_param('/topics/gelsight/angles', '/gelsight/angles')
-        self.gelsight_anglesD_topic = rospy.get_param('/topics/gelsight/anglesD', '/gelsight/anglesD')
-        self.vicon_angles_topic = rospy.get_param('/topics/vicon/angles', '/vicon/angles')
-        self.vicon_anglesD_topic = rospy.get_param('/topics/vicon/anglesD', '/vicon/anglesD')
+        self.b_kalman_filter = rospy.get_param("~kalman_filter", True)
+        # self.gelsight_angles_topic = rospy.get_param('/topics/gelsight/angles', '/gelsight/angles')
+        # self.gelsight_anglesD_topic = rospy.get_param('/topics/gelsight/anglesD', '/gelsight/anglesD')
+        # self.vicon_angles_topic = rospy.get_param('/topics/vicon/angles', '/vicon/angles')
+        # self.vicon_anglesD_topic = rospy.get_param('/topics/vicon/anglesD', '/vicon/anglesD')
 
-        self.vicon_state_topic = rospy.get_param('/topics/vicon/state', '/vicon/benjamin_v2/Root')
-        self.vicon_world_topic = rospy.get_param('/topics/vicon/world', '/vicon/benjamin_v2/World')
+        # self.vicon_state_topic = rospy.get_param('/topics/vicon/state', '/vicon/benjamin_v2/Root')
+        # self.vicon_world_topic = rospy.get_param('/topics/vicon/world', '/vicon/benjamin_v2/World')
 
     def init_variables(self):
         # Actuator
@@ -36,6 +45,8 @@ class InvertedPendulumControlNode:
 
         # callback time
         self.time = rospy.Time.now()
+
+        self.activate = Event()
 
         # mode
         self.vicon = False # set to true if phi & d_phi is calculated from vicon, else they come from the sensor
@@ -57,8 +68,8 @@ class InvertedPendulumControlNode:
 
     def init_publishers(self):
         """Initialize ROS publishers, initialize message variables"""
-        self.pub_vicon_anglesD = rospy.Publisher(self.vicon_anglesD_topic, Angles2dStamped, queue_size=10)
-        self.pub_gelsight_anglesD = rospy.Publisher(self.gelsight_anglesD_topic, Angles2dStamped, queue_size=10)
+        # self.pub_vicon_anglesD = rospy.Publisher(self.vicon_anglesD_topic, Angles2dStamped, queue_size=10)
+        # self.pub_gelsight_anglesD = rospy.Publisher(self.gelsight_anglesD_topic, Angles2dStamped, queue_size=10)
 
         self.pub_state = rospy.Publisher(self.state_topic, ArrayStamped, queue_size=10)
 
@@ -104,17 +115,25 @@ class InvertedPendulumControlNode:
             pubArray(self.pub_state, state, self.time)
 
     def motor_callback(self, msg):
-        """Callback function for bottom motor state data"""
+        """Callback function for motor state data"""
         self.x = msg.vector[0]
         self.xD = msg.vector[1]
 
+    def service_callback(self, req):
+        self.activate.set()
+        return TriggerResponse(success=True, message="Activated Controller.")
+
     def run(self):
         """Subscribe to relevant topics and start the ROS node"""
+        self.activate.wait()
+        rospy.sleep(5.0)
         rospy.Subscriber(self.motor_state, ArrayStamped, self.motor_callback)
-        rospy.Subscriber(self.vicon_angle_topic, ArrayStamped, self.callback_sensor) # don't forget about self.vicon distinction
+        if self.vicon:
+            rospy.Subscriber(self.vicon_angle_topic, ArrayStamped, self.callback_sensor)
         rospy.Subscriber(self.gelsight_angle_topic, ScalarStamped, self.callback_sensor)
         rospy.spin()
 
 if __name__ == "__main__":
     node = InvertedPendulumControlNode()
-    node.run()
+    Thread(target=node.run, daemon=True).start()
+    rospy.spin()

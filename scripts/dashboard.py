@@ -8,7 +8,7 @@ class Dashboard:
 
     def init_proxies(self):
         rospy.wait_for_service("/sensor/start", timeout=5)
-        # rospy.wait_for_service("/controller/start", timeout=5)
+        rospy.wait_for_service("/controller/start", timeout=5)
         # rospy.wait_for_service("/homing/start", timeout=5)
 
         self.start_sensor = rospy.ServiceProxy(
@@ -19,10 +19,10 @@ class Dashboard:
         #     "/homing/start",
         #     Trigger
         # )
-        # self.start_controller = rospy.ServiceProxy(
-        #     "/controller/start",
-        #     Trigger
-        # )
+        self.start_controller = rospy.ServiceProxy(
+            "/controller/start",
+            Trigger
+        )
     
     def print_menu(self):
         print("|Dashboard Menu:")

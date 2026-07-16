@@ -71,6 +71,7 @@ class LQGNode:
         self.y = np.zeros((self.Cd.shape[0], 1))  # measurement
         self.u = 0.0  # control input
         self.time = rospy.Time.now()
+        self.ramp_counter = 0
     
     def discretize(self):
         """Converts continuous-time system matrices to discrete-time"""
@@ -119,6 +120,10 @@ class LQGNode:
         msg is measurement y_k (x,xD,phi), we use this to estimate the a posteriori state x_k. This goes into the lqr and gets u_k.
         u_k goes into the system and also calculates the a priori state x_k+1. The a priori estimate x_k+1 is updated with the next measurement y_k+1.
         """
+        # assuming this runs with 20 Hz, so for the first 40 callbacks i want to ramp up K gradually.
+        # while self.ramp_counter < 10:
+        #     self.K = self.K_sp * (self.ramp_counter / 40.0)
+        #     self.ramp_counter += 1
         self.y = subArray(msg)
         self.time = msg.header.stamp
         self.x = self.a_posteriori_estimate()
@@ -165,7 +170,7 @@ class LQGNode:
             self.v_prev = ScalarStamped(scalar=0.0)
             self.v_prev.header.stamp = self.time - rospy.Duration(0,10000000) # maybe use variable self.Ts
         dt = (self.time - self.v_prev.header.stamp).to_sec()
-        print("dt:", dt, "u:", self.u, "v_prev:", self.v_prev.scalar)
+        # print("dt:", dt, "u:", self.u, "v_prev:", self.v_prev.scalar)
         return self.u * dt + self.v_prev.scalar
     
     def run(self):

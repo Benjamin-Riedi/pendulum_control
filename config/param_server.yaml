@@ -18,6 +18,10 @@ top:
 matrices_path: "data/matrices/"
 gelsight:
   rgb: "/gelsight/rgb"
+vicon:
+  pendulum: "/vicon/benjamin_v2/Root"
+  world: "/vicon/benjamin_v2/World"
+  downsample_factor: 10
 
 limits:
   x: 51000
