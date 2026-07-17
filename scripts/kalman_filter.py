@@ -6,6 +6,7 @@ import control
 
 from pendulum_control.common import * # this imports the common messages
 from pendulum_control import pubArray, subArray
+from pendulum_control import calculate_inertia, M, cm
 
 class LQGNode:
     def __init__(self):
@@ -13,10 +14,10 @@ class LQGNode:
         rospack = rospkg.RosPack()
         self.package_path = rospack.get_path('pendulum_control')
         self.read_params()
+        self.init_variables()
         self.read_matrices()
         self.init_topics()
         self.init_publishers()
-        self.init_variables()
 
     def read_params(self):
         """Read parameters from launch file"""
@@ -41,6 +42,9 @@ class LQGNode:
 
         self.Qe = np.atleast_2d(np.genfromtxt(self.matrices_path + "Qe.csv", delimiter=","))
         self.Re = np.atleast_2d(np.genfromtxt(self.matrices_path + "Re.csv", delimiter=","))
+
+        self.A[3,1] = M * cm * 9.81 / (M * cm**2 + self.I[0,0])
+        self.B[3,0] *= M * cm / (M * cm**2 + self.I[0,0])
 
         self.discretize()
 
@@ -68,11 +72,12 @@ class LQGNode:
         # add state estimation error
 
     def init_variables(self):
-        self.x = np.zeros((self.A.shape[0], 1))  # state estimate
-        self.y = np.zeros((self.Cd.shape[0], 1))  # measurement
+        self.x = np.zeros((4, 1))  # state estimate
+        self.y = np.zeros((3, 1))  # measurement
         self.u = 0.0  # control input
         self.time = rospy.Time.now()
         self.ramp_counter = 0
+        self.I = calculate_inertia()
     
     def discretize(self):
         """Converts continuous-time system matrices to discrete-time"""

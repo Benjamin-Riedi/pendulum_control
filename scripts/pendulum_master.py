@@ -25,6 +25,7 @@ class InvertedPendulumControlNode:
     def read_ROS_params(self):
         """Load parameters from ROS parameter server"""
         self.b_kalman_filter = rospy.get_param("~kalman_filter", True)
+        self.Ts = rospy.get_param("/Ts", 0.01)  # sampling time
         # self.gelsight_angles_topic = rospy.get_param('/topics/gelsight/angles', '/gelsight/angles')
         # self.gelsight_anglesD_topic = rospy.get_param('/topics/gelsight/anglesD', '/gelsight/anglesD')
         # self.vicon_angles_topic = rospy.get_param('/topics/vicon/angles', '/vicon/angles')
@@ -94,7 +95,7 @@ class InvertedPendulumControlNode:
     
     def finite_difference(self, angle, dt):
         """Calculate angular velocities using finite difference method"""
-        return (self.phi - angle) / dt
+        return (self.phi - angle) / self.Ts
     
     def callback_sensor(self, msg):
         """Callback function for sensor data (angles)

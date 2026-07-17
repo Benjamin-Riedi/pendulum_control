@@ -1,29 +1,44 @@
 import rospy
+import rospkg
+import os
 import numpy as np
 import control
 
 from pendulum_control.common import * # this imports the common messages
 from pendulum_control import pubArray, subArray
+from pendulum_control import calculate_inertia, M, cm
 
 class StateFeedbackNode:
     def __init__(self):
         rospy.init_node(name='state_feedback', anonymous=True)
+        rospack = rospkg.RosPack()
+        self.package_path = rospack.get_path('pendulum_control')
         self.read_params()
-        self.read_matrices()
-        self.init_publishers()
         self.init_variables()
+        self.read_matrices()
+        self.init_topics()
+        self.init_publishers()
 
     def read_params(self):
-        self.b_calculate_K = rospy.get_param("~calculate_K", False)  # if true, provide A,B,Q,R to solve ARE and get K, else provide K
-        self.matrices_path = rospy.get_param('/matrices_path')
+        self.b_calculate_K = rospy.get_param("~calculate_gains", False)  # if true, provide A,B,Q,R to solve ARE and get K, else provide K
+        self.matrices_rel = rospy.get_param('/matrices_path')
         self.B_file_path = rospy.get_param("B_matrix")
+        self.Ts = rospy.get_param('/Ts')
+
+        if os.path.isabs(self.matrices_rel):
+            self.matrices_path = self.matrices_rel
+        else:
+            self.matrices_path = os.path.join(self.package_path, self.matrices_rel)
 
     def read_matrices(self):
         self.A = np.atleast_2d(np.genfromtxt(self.matrices_path + "Ac.csv", delimiter=","))
         self.B = np.atleast_2d(np.genfromtxt(self.matrices_path + self.B_file_path, delimiter=",")).reshape(-1,1)
 
-        self.Q = np.atleast_2d(np.genfromtxt(self.matrices_path + "Q.csv", delimiter=","))
-        self.R = np.atleast_2d(np.genfromtxt(self.matrices_path + "R.csv", delimiter=","))
+        self.A[3,1] = M * cm * 9.81 / (M * cm**2 + self.I[0,0])
+        self.B[3,0] *= M * cm / (M * cm**2 + self.I[0,0])
+
+        self.Q = np.atleast_2d(np.genfromtxt(self.matrices_path + "Qr.csv", delimiter=","))
+        self.R = np.atleast_2d(np.genfromtxt(self.matrices_path + "Rr.csv", delimiter=","))
 
         if not self.b_calculate_K:
             self.K = np.atleast_2d(np.genfromtxt(self.matrices_path + "K.csv", delimiter=","))
@@ -41,8 +56,9 @@ class StateFeedbackNode:
 
     def init_variables(self):
         self.u = 0.0
-        self.x = np.zeros((self.A.shape[0], 1))  # state vector
+        self.x = np.zeros((4, 1))  # state vector
         self.time = rospy.Time.now()
+        self.I = calculate_inertia()
     
     def calculate_K(self):
         # i don't care about output

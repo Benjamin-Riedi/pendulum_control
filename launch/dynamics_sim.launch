@@ -1,5 +1,8 @@
 <launch>
     <rosparam command="load" file="$(find pendulum_control)/config/param_server.yaml" />
+    <include file="$(find ethercat_ros_configurator)/launch/converters.launch" />
+    <!-- <include file="$(find ethercat_ros_configurator)/launch/test_motor_start.launch" /> -->
+
     <group ns="bottom">
         <node pkg="pendulum_control" type="dynamics_simulator.py" name="dynamics_simulator_node_bottom" output="screen"/>
         <node pkg="pendulum_control" type="kalman_filter.py" name="kalman_filter_node_bottom" output="screen">
@@ -15,17 +18,4 @@
         <node pkg="pendulum_control" type="publisher.py" name="publisher_node_top" output="screen"/>
     </group>
     <node pkg="pendulum_control" type="dashboard.py" name="dashboard_node" output="screen"/>
-
-    <!-- <node
-        pkg="ethercat_ros_configurator"
-        type="convert_units_read.py"
-        name="convert_units_read"
-        output="screen"
-    />
-    <node
-        pkg="ethercat_ros_configurator"
-        type="convert_units_write.py"
-        name="convert_units_write"
-        output="screen"
-    /> -->
 </launch>

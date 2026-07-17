@@ -86,7 +86,10 @@ def plot_velocity(data_frames, root, top):
     axe.set_title(f'Velocity Error. Delay is {delay:.2f} s')
     fig.tight_layout()
     fig.set_size_inches(15, 9)
-    plt.savefig(os.path.join(root, 'velocity_tracking.png'))
+    if top:
+        plt.savefig(os.path.join(root, 'velocity_tracking_top.png'))
+    else:
+        plt.savefig(os.path.join(root, 'velocity_tracking_bottom.png'))
     plt.show()
 
 def plot_output(data_frames, root, topics):
@@ -242,12 +245,13 @@ def main():
         exp = os.getcwd()
         bag_file = find_bag(exp)
 
-    topic_names = ['/top/y', '/bottom/y', '/top/v_sp', '/bottom/v_sp', '/ethercat_master/Maxon_Motor_top/reading', '/ethercat_master/Maxon_Motor_bottom/reading']  # replace with your topic name
+    # topic_names = ['/top/y', '/bottom/y', '/top/v_sp', '/bottom/v_sp', '/ethercat_master/Maxon_Motor_top/reading', '/ethercat_master/Maxon_Motor_bottom/reading']  # replace with your topic name
+    topic_names = ['/top/state', '/bottom/state', '/top/v_sp', '/bottom/v_sp', '/ethercat_master/Maxon_Motor_top/reading', '/ethercat_master/Maxon_Motor_bottom/reading']  # replace with your topic name
+    
     bag_file = find_bag(exp)
     data_frames = bag_to_pd(exp, topic_names)
-    # plot_state(data_frames, exp, topic_names[0:2])
-    plot_output(data_frames, exp, topic_names[0:2])
-    # plot_state(data_frames, exp, topic_names[1])
+    plot_state(data_frames, exp, topic_names[0:2])
+    # plot_output(data_frames, exp, topic_names[0:2])
     plot_velocity(data_frames, exp, top=True)
     plot_velocity(data_frames, exp, top=False)
     if not bag_file:
