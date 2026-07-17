@@ -17,7 +17,7 @@ class InvertedPendulumControlNode:
         self.init_variables()
 
         self.calib_srv = rospy.Service(
-            '/controller/start',
+            'controller/start',
             Trigger,
             self.service_callback
         )
@@ -129,7 +129,7 @@ class InvertedPendulumControlNode:
         rospy.sleep(5.0)
         rospy.Subscriber(self.motor_state, ArrayStamped, self.motor_callback)
         if self.vicon:
-            rospy.Subscriber(self.vicon_angle_topic, ArrayStamped, self.callback_sensor)
+            rospy.Subscriber(self.vicon_angle_topic, ScalarStamped, self.callback_sensor)
         else:
             rospy.Subscriber(self.gelsight_angle_topic, ScalarStamped, self.callback_sensor)
         rospy.spin()

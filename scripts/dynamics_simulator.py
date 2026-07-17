@@ -89,7 +89,7 @@ class DynamicsSimulatorNode:
         """Callback function to receive control input"""
         self.u = np.array(msg.scalar).reshape(1,1)
         self.output = self.dynamics_step()
-        print("Output:", self.output)
+        # print("Output:", self.output)
         # wait to simulate sensor delay
         rospy.sleep(self.Ts)
         pubArray(self.output_pub, self.output, rospy.Time.now())

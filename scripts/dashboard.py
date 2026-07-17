@@ -8,21 +8,16 @@ class Dashboard:
 
     def init_proxies(self):
         # rospy.wait_for_service("/sensor/start", timeout=5)
-        rospy.wait_for_service("/controller/start", timeout=5)
-        # rospy.wait_for_service("/homing/start", timeout=5)
+        rospy.wait_for_service("/top/controller/start", timeout=5)
+        rospy.wait_for_service("/bottom/controller/start", timeout=5)
+        # rospy.wait_for_service("/top/state/set", timeout=5)
+        # rospy.wait_for_service("/bottom/state/set", timeout=5)
 
-        # self.start_sensor = rospy.ServiceProxy(
-        #     "/sensor/start",
-        #     Trigger
-        # )
-        # self.start_homing = rospy.ServiceProxy(
-        #     "/homing/start",
-        #     Trigger
-        # )
-        self.start_controller = rospy.ServiceProxy(
-            "/controller/start",
-            Trigger
-        )
+
+        namespaces = ["/top", "/bottom"]
+        self.state_proxies = [rospy.ServiceProxy(f"{ns}/state/set", Trigger) for ns in namespaces]
+        self.controller_proxies = [rospy.ServiceProxy(f"{ns}/controller/start", Trigger) for ns in namespaces]
+        self.sensor_proxies = [rospy.ServiceProxy(f"{ns}/sensor/start", Trigger) for ns in namespaces]
     
     def print_menu(self):
         print("|Dashboard Menu:")
@@ -38,10 +33,16 @@ class Dashboard:
             cmd = input("> ")
 
             if cmd == "s":
-                self.start_sensor()
+                for proxy in self.sensor_proxies:
+                    proxy()
 
             elif cmd == "c":
-                self.start_controller()
+                for proxy in self.controller_proxies:
+                    proxy()
+            
+            elif cmd == "h":
+                for proxy in self.state_proxies:
+                    proxy()
 
             elif cmd == "q":
                 break

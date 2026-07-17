@@ -11,9 +11,9 @@ class Publisher:
         self.init_topics()
         self.init_publishers()
         self.calib_srv = rospy.Service(
-            '/gelsight_rgb/start_calibration',
+            'state/set',
             Trigger,
-            self.calibrate_cb
+            self.service_callback
         )
         rospy.sleep(5)  # wait for publishers to initialize
 
@@ -26,6 +26,7 @@ class Publisher:
         self.set_state_topic = 'set_state'
 
     def init_publishers(self):
+        # latch=true
         self.motor_top_pub = rospy.Publisher(self.motor_topic, MotorCtrlMessage, queue_size=1)
         self.set_state_pub = rospy.Publisher(self.set_state_topic, ArrayStamped, queue_size=1)
 

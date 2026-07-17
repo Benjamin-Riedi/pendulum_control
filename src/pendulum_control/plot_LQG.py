@@ -89,6 +89,73 @@ def plot_velocity(data_frames, root, top):
     plt.savefig(os.path.join(root, 'velocity_tracking.png'))
     plt.show()
 
+def plot_output(data_frames, root, topics):
+
+    for topic in topics:
+
+        fig, (axx, axd) = plt.subplots(2, 1, sharex=True)
+
+        (x, phi, dx), time = extract_array(data_frames, topic)
+        np.rad2deg(phi,out=phi)
+
+        colors = ['tab:blue', 'tab:red']
+
+        # max values
+        factor = 1.1
+        mx = np.max(np.abs(x)) * factor
+        mdx = np.max(np.abs(dx)) * factor
+        mphi = np.max(np.abs(phi)) * factor
+
+        ### POSITION ###
+
+        axx.set_ylabel('Position [m]', color=colors[0])
+        axd.set_ylabel('Velocity [m/s]', color=colors[0])
+        axd.set_xlabel('time [s]')
+
+        axx.plot(time, x, label=topic.replace('state', '').strip('/') + ' x', color=colors[0])
+        axd.plot(time, dx, label=topic.replace('state', '').strip('/') + ' dx', color=colors[0])
+
+        axx.tick_params(axis='y', labelcolor=colors[0])
+        axd.tick_params(axis='y', labelcolor=colors[0])
+
+        axx.axhline(linewidth=0.5, color='black', ls='--')
+        axd.axhline(linewidth=0.5, color='black', ls='--')
+
+        ### --------- ###
+
+        axp = axx.twinx()  # instantiate a second Axes that shares the same x-axis
+        axdp = axd.twinx()
+
+        ### ANGLES ###
+
+        axp.set_ylabel('Angle [deg]', color=colors[1])
+        axdp.set_ylabel('Angular Velocity [deg/s]', color=colors[1])
+
+        axp.plot(time, phi, label=topic.replace('state', '').strip('/') + ' phi', color=colors[1])
+
+        axp.tick_params(axis='y', labelcolor=colors[1])
+        axdp.tick_params(axis='y', labelcolor=colors[1])
+
+        ### --------- ###
+
+        # make symmetric to align y=0
+        axx.set_ylim(-mx, mx)
+        axd.set_ylim(-mdx, mdx)
+        axp.set_ylim(-mphi, mphi)
+
+        axx.set_title('Position and Angles')
+        axd.set_title('First Derivative of Position and Angles')
+
+        axx.legend(loc='upper right')
+        axd.legend(loc='upper right')
+        axp.legend(loc='lower right')
+        axdp.legend(loc='lower right')
+
+        fig.tight_layout()
+        fig.set_size_inches(15, 9)
+        fig.suptitle(f'Initial State: (x,phi,dx,dphi) = ({x[0]:.2f}m, {phi[0]:.2f}°, {dx[0]:.2f}m/s', fontsize=16) # maybe add degrees for phi and dphi
+        plt.savefig(os.path.join(root, topic.replace('y', '').strip('/') + '_output.png'))
+        plt.show()
 
 def plot_state(data_frames, root, topics):
 
@@ -175,10 +242,11 @@ def main():
         exp = os.getcwd()
         bag_file = find_bag(exp)
 
-    topic_names = ['/top/state', '/bottom/state', '/top/v_sp', '/bottom/v_sp', '/ethercat_master/Maxon_Motor_top/reading', '/ethercat_master/Maxon_Motor_bottom/reading']  # replace with your topic name
+    topic_names = ['/top/y', '/bottom/y', '/top/v_sp', '/bottom/v_sp', '/ethercat_master/Maxon_Motor_top/reading', '/ethercat_master/Maxon_Motor_bottom/reading']  # replace with your topic name
     bag_file = find_bag(exp)
     data_frames = bag_to_pd(exp, topic_names)
-    plot_state(data_frames, exp, topic_names[0:2])
+    # plot_state(data_frames, exp, topic_names[0:2])
+    plot_output(data_frames, exp, topic_names[0:2])
     # plot_state(data_frames, exp, topic_names[1])
     plot_velocity(data_frames, exp, top=True)
     plot_velocity(data_frames, exp, top=False)

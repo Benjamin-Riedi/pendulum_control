@@ -20,7 +20,7 @@ class StateFeedbackNode:
 
     def read_matrices(self):
         self.A = np.atleast_2d(np.genfromtxt(self.matrices_path + "Ac.csv", delimiter=","))
-        self.B = np.atleast_2d(np.genfromtxt(self.matrices_path + self.B_file_path, delimiter=","))
+        self.B = np.atleast_2d(np.genfromtxt(self.matrices_path + self.B_file_path, delimiter=",")).reshape(-1,1)
 
         self.Q = np.atleast_2d(np.genfromtxt(self.matrices_path + "Q.csv", delimiter=","))
         self.R = np.atleast_2d(np.genfromtxt(self.matrices_path + "R.csv", delimiter=","))
@@ -41,12 +41,13 @@ class StateFeedbackNode:
 
     def init_variables(self):
         self.u = 0.0
-        self.time = 0
+        self.x = np.zeros((self.A.shape[0], 1))  # state vector
+        self.time = rospy.Time.now()
     
     def calculate_K(self):
         # i don't care about output
-        C = np.zeros((1,8))
-        D = np.zeros((1,2))
+        C = np.zeros((3,4))
+        D = np.zeros((3,1))
 
         sys_c = control.ss(self.A,self.B,C,D)
         sys_d = control.c2d(sys_c, self.Ts)
@@ -68,7 +69,8 @@ class StateFeedbackNode:
     def callback(self, msg):
         self.time = msg.header.stamp
         # msg.vector.reshape(-1,1)
-        self.u = -self.K @ msg.vector
+        self.x = subArray(msg)
+        self.u = -self.K @ self.x
 
         self.v_sp_msg.scalar = self.integrate()
         self.v_pub.publish(self.v_sp_msg)
@@ -79,7 +81,7 @@ class StateFeedbackNode:
     def integrate(self):
         if not hasattr(self, 'u_prev'):
             self.u_prev = ScalarStamped(scalar=0.0)
-            self.u_prev.header.stamp = self.time - 0.01
+            self.u_prev.header.stamp = self.time - rospy.Duration(0, 10000000)
         dt = (self.time - self.u_prev.header.stamp).to_sec()
         return 0.5 * dt * (self.u + self.u_prev.scalar)
     

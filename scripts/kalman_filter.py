@@ -61,6 +61,7 @@ class LQGNode:
     def init_publishers(self):
         self.v_pub = rospy.Publisher(self.v_topic, ScalarStamped, queue_size=1)
         self.u_pub = rospy.Publisher(self.u_topic, ScalarStamped, queue_size=1)
+        self.state_pub = rospy.Publisher(self.state_topic, ArrayStamped, queue_size=1)
 
         self.v_sp_msg = ScalarStamped()
         self.u_msg = ScalarStamped()
@@ -132,6 +133,8 @@ class LQGNode:
         self.u_msg.scalar = self.u.item() # convert 1x1 array to float
         self.u_msg.header.stamp = self.time
         self.u_pub.publish(self.u_msg)
+
+        pubArray(self.state_pub, self.x, self.time)
 
         self.v_sp_msg.scalar = self.integrate()
         self.v_pub.publish(self.v_sp_msg)
