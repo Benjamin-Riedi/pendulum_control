@@ -44,6 +44,8 @@ class StateFeedbackNode:
             self.K = np.atleast_2d(np.genfromtxt(self.matrices_path + "K.csv", delimiter=","))
         else:
             self.K = self.calculate_K()
+        
+        self.K_full = self.K
 
     def init_topics(self):
         self.state_topic = 'state'
@@ -59,6 +61,7 @@ class StateFeedbackNode:
         self.x = np.zeros((4, 1))  # state vector
         self.time = rospy.Time.now()
         self.I = calculate_inertia()
+        self.ramp_counter = 0
     
     def calculate_K(self):
         # i don't care about output
@@ -83,6 +86,9 @@ class StateFeedbackNode:
         return K
     
     def callback(self, msg):
+        while self.ramp_counter < 400:
+            self.K = self.K_full * (self.ramp_counter / 400.0)
+            self.ramp_counter += 1
         self.time = msg.header.stamp
         # msg.vector.reshape(-1,1)
         self.x = subArray(msg)

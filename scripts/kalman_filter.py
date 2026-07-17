@@ -55,6 +55,8 @@ class LQGNode:
             self.K = self.calculate_K()
             self.L = self.calculate_L()
 
+        self.K_full = self.K
+
     def init_topics(self):
         self.v_topic = 'v_sp'
         self.u_topic = 'u'
@@ -127,9 +129,9 @@ class LQGNode:
         u_k goes into the system and also calculates the a priori state x_k+1. The a priori estimate x_k+1 is updated with the next measurement y_k+1.
         """
         # assuming this runs with 20 Hz, so for the first 40 callbacks i want to ramp up K gradually.
-        # while self.ramp_counter < 10:
-        #     self.K = self.K_sp * (self.ramp_counter / 40.0)
-        #     self.ramp_counter += 1
+        while self.ramp_counter < 100:
+            self.K = self.K_full * (self.ramp_counter / 40.0)
+            self.ramp_counter += 1
         self.y = subArray(msg)
         self.time = msg.header.stamp
         self.x = self.a_posteriori_estimate()
