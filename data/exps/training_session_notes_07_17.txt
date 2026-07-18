@@ -14,3 +14,19 @@ R = 0.004 exp37: [[-172.36775878 -268.54219978  -96.06007202  -39.34767966]]
 
 07.18:
 Q(x) = 219->100, exp38: [[-118.52451655  237.94084846  -75.18669379   33.09205438]]
+Q(x) = 100->50, exp39: [[ -84.18227978 -218.40134533  -61.00566637  -29.0846613 ]]
+Q(phi) = 131->200, exp40: [[ -83.17938331 -244.35147421  -64.15410605  -30.42585546]]
+Q(x) = 50->20, exp41: buried under errors
+R = 10, exp42. just to try and understand. i predict that it will be very slow: true, it was terrible
+R = 0.001 exp42, trying for quicker reaction, now that position isn't penalized as much: [[ -87.71743956 -362.6300888   -81.8186677   -40.31845309]]
+R = 0.004 Q(x) = 0 exp43, actually don't care where the cart is. but i also don't believe this will fix my problem: [[ 1.05779545e-18 -1.89224519e+02 -1.19278105e+01 -1.57703293e+01]]
+Q(x) = 20, Q(phi) = 200->300, exp44: [[ -52.04982479 -259.02470223  -52.72591609  -27.77626179]]
+Q(phi) = 300->400, exp45: [[ -51.43603972 -285.75834156  -55.00910774  -28.86820143]]
+Q(phi) = 400->600, exp46: [[-50.46007175 329.93217013 -58.48555559  30.56293853]]
+
+i don't know if it's just luck, but this config is super chill (no bumps or jerks). i need to find a way to work off of this i think, because it seems responsive to the angle just needs to be faster:
+r = 0.004, q = 
+20,0,0,0
+0,300,0,0
+0,0,1,0
+0,0,0,0.328
