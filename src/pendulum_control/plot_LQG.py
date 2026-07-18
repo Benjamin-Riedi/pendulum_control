@@ -32,24 +32,23 @@ def extract_velocity(data_frames, topics):
         
     return actualVelocity, time
 
-def extract_scalar(data_frames, topics):
-    for topic in topics:
-        if topic not in data_frames:
-            print(f"Topic {topic} not found in data frames.")
-            continue
-        df = data_frames[topic]
-        time = df['time'].to_numpy() * 1e-9 # convert to seconds
-        scalar = df['scalar'].to_numpy()
+def extract_scalar(data_frames, topic):
+    if topic not in data_frames:
+        print(f"Topic {topic} not found in data frames.")
+        return [], []
+    df = data_frames[topic]
+    time = df['time'].to_numpy() * 1e-9 # convert to seconds
+    scalar = df['scalar'].to_numpy()
         
     return scalar, time
 
 def plot_velocity(data_frames, root, top):
     if top:
         actualVelocity, time_r = extract_velocity(data_frames, ['/ethercat_master/Maxon_Motor_top/reading'])
-        v_sp, time_sp = extract_scalar(data_frames, ['/top/v_sp'])
+        v_sp, time_sp = extract_scalar(data_frames, '/top/v_sp')
     else:
         actualVelocity, time_r = extract_velocity(data_frames, ['/ethercat_master/Maxon_Motor_bottom/reading'])
-        v_sp, time_sp = extract_scalar(data_frames, ['/bottom/v_sp'])
+        v_sp, time_sp = extract_scalar(data_frames, '/bottom/v_sp')
 
     v_sp *= 1200 # convert to rpm
     mask = (time_r >= time_sp[0]) & (time_r <= time_sp[-1])
@@ -90,6 +89,36 @@ def plot_velocity(data_frames, root, top):
         plt.savefig(os.path.join(root, 'velocity_tracking_top.png'))
     else:
         plt.savefig(os.path.join(root, 'velocity_tracking_bottom.png'))
+    plt.show()
+
+def plot_input(data_frames, root, topics):
+    fig, (axt, axb) = plt.subplots(2, 1, sharex=True)
+    for topic, ax in zip(topics,[axt, axb]):
+        u, time = extract_scalar(data_frames, topic)
+
+        ax.plot(time, u, label=topic.replace('u', '').strip('/') + ' u', color='tab:blue')
+        ax.set_xlabel('Time [s]')
+        ax.set_ylabel('Input [m/s^2]')
+        ax.set_title(topic)
+        ax.legend()
+    fig.tight_layout()
+    fig.set_size_inches(15, 9)
+    plt.savefig(os.path.join(root, 'u.png'))
+    plt.show()
+
+def plot_angles(data_frames, root, topics):
+    fig, (axt, axb) = plt.subplots(2, 1, sharex=True)
+    for topic, ax in zip(topics,[axt, axb]):
+        angle, time = extract_scalar(data_frames, topic)
+
+        ax.plot(time, angle, label=topic.replace('angle', '').strip('/') + ' angle', color='tab:blue')
+        ax.set_xlabel('Time [s]')
+        ax.set_ylabel('Angle [deg]')
+        ax.set_title(topic)
+        ax.legend()
+    fig.tight_layout()
+    fig.set_size_inches(15, 9)
+    plt.savefig(os.path.join(root, 'angles.png'))
     plt.show()
 
 def plot_output(data_frames, root, topics):
@@ -246,14 +275,17 @@ def main():
         bag_file = find_bag(exp)
 
     # topic_names = ['/top/y', '/bottom/y', '/top/v_sp', '/bottom/v_sp', '/ethercat_master/Maxon_Motor_top/reading', '/ethercat_master/Maxon_Motor_bottom/reading']  # replace with your topic name
-    topic_names = ['/top/state', '/bottom/state', '/top/v_sp', '/bottom/v_sp', '/ethercat_master/Maxon_Motor_top/reading', '/ethercat_master/Maxon_Motor_bottom/reading']  # replace with your topic name
+    topic_names = ['/top/state', '/bottom/state', '/top/u', '/bottom/u', '/top/vicon/phi', '/bottom/vicon/phi', '/top/v_sp', '/bottom/v_sp', '/ethercat_master/Maxon_Motor_top/reading', '/ethercat_master/Maxon_Motor_bottom/reading']  # replace with your topic name
     
     bag_file = find_bag(exp)
     data_frames = bag_to_pd(exp, topic_names)
     plot_state(data_frames, exp, topic_names[0:2])
+    plot_input(data_frames, exp, topic_names[2:4])
+    plot_angles(data_frames, exp, topic_names[4:6])
+
     # plot_output(data_frames, exp, topic_names[0:2])
-    plot_velocity(data_frames, exp, top=True)
-    plot_velocity(data_frames, exp, top=False)
+    # plot_velocity(data_frames, exp, top=True)
+    # plot_velocity(data_frames, exp, top=False)
     if not bag_file:
         return
 

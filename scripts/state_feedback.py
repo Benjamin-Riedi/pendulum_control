@@ -50,9 +50,11 @@ class StateFeedbackNode:
     def init_topics(self):
         self.state_topic = 'state'
         self.v_topic = 'v_sp'
+        self.u_topic = 'u'
         
     def init_publishers(self):
         self.v_pub = rospy.Publisher(self.v_topic, ScalarStamped, queue_size=1)
+        self.u_pub = rospy.Publisher(self.u_topic, ScalarStamped, queue_size=1)
         self.v_sp_msg = ScalarStamped()
         # publish u for introspection?
 
@@ -99,6 +101,7 @@ class StateFeedbackNode:
 
         self.u_prev.scalar = self.u
         self.u_prev.header.stamp = self.time
+        self.u_pub.publish(self.u_prev)
 
     def integrate(self):
         if not hasattr(self, 'u_prev'):
