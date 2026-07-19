@@ -30,3 +30,19 @@ r = 0.004, q =
 0,300,0,0
 0,0,1,0
 0,0,0,0.328
+
+07.19
+exp47 same as exp44: bottom had mild jerks, still too slow. it needs more agressive reaction to falling angles.
+R = 0.002 exp48: [[ -67.92055081 -331.36105854  -68.43423238  -34.5184489 ]]
+R = 0.003 exp49: [[ -58.29598168 -287.51622263  -58.9106335   -30.44090484]]
+
+exp50, trying be directly changing K. here i'v increased K(dphi) to 100 to see what effect it has: -52.04982479,-259.02470223,-52.72591609,-50. extreme jerks but i really don't think thats and issue with the controller
+exp 51: -52.04982479,-259.02470223,-52.72591609,-70
+
+implemented clipping for motor commands, hopefully this stops the jerking. it didnt
+exp52, trying to limit high speeds (which imo causes the jerking). Q(dx) = 1 -> 100 : [[ -33.12752843 -312.38704499  -86.77971621  -47.40812414]]
+exp53, i have no idea what i'm doing anymore. r = 0.004 q(phi) = 400: [[ -31.46006275 -306.98286737  -82.79316229  -45.41108736]]
+exp54, q(phi) = 300 q(dphi) = 0.38->10: [[-24.03682459 251.19480702 -63.81022358  42.24742762]]
+exp55, q(x) = 0.1, q(dx) = 0.1: [[ -2.11509626 140.5220432   -7.79988918  24.92404475]]
+exp56, r=0.001: [[ -2.44681587 160.80699989  -9.01722939  28.56143933]]
+exp57, K = 0.0,250.0,10.0,50.0, fucking worthless

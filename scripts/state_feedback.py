@@ -23,6 +23,7 @@ class StateFeedbackNode:
         self.b_calculate_K = rospy.get_param("~calculate_gains", False)  # if true, provide A,B,Q,R to solve ARE and get K, else provide K
         self.matrices_rel = rospy.get_param('/matrices_path')
         self.B_file_path = rospy.get_param("B_matrix")
+        self.K_file_path = rospy.get_param("K_matrix")
         self.Ts = rospy.get_param('/Ts')
 
         if os.path.isabs(self.matrices_rel):
@@ -41,7 +42,7 @@ class StateFeedbackNode:
         self.R = np.atleast_2d(np.genfromtxt(self.matrices_path + "Rr.csv", delimiter=","))
 
         if not self.b_calculate_K:
-            self.K = np.atleast_2d(np.genfromtxt(self.matrices_path + "K.csv", delimiter=","))
+            self.K = np.atleast_2d(np.genfromtxt(self.matrices_path + self.K_file_path, delimiter=","))
         else:
             self.K = self.calculate_K()
         

@@ -110,6 +110,7 @@ def plot_angles(data_frames, root, topics):
     fig, (axt, axb) = plt.subplots(2, 1, sharex=True)
     for topic, ax in zip(topics,[axt, axb]):
         angle, time = extract_scalar(data_frames, topic)
+        angle = np.rad2deg(angle)
 
         ax.plot(time, angle, label=topic.replace('angle', '').strip('/') + ' angle', color='tab:blue')
         ax.set_xlabel('Time [s]')
