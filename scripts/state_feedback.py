@@ -24,6 +24,8 @@ class StateFeedbackNode:
         self.matrices_rel = rospy.get_param('/matrices_path')
         self.B_file_path = rospy.get_param("B_matrix")
         self.K_file_path = rospy.get_param("K_matrix")
+        self.Tx_file_path = rospy.get_param("/Tx_matrix")
+        self.Tu_file_path = rospy.get_param("/Tu_matrix")
         self.Ts = rospy.get_param('/Ts')
 
         if os.path.isabs(self.matrices_rel):
@@ -32,11 +34,17 @@ class StateFeedbackNode:
             self.matrices_path = os.path.join(self.package_path, self.matrices_rel)
 
     def read_matrices(self):
+        self.Tx = np.atleast_2d(np.genfromtxt(self.matrices_path + self.Tx_file_path, delimiter=","))
+        self.Tu = np.atleast_2d(np.genfromtxt(self.matrices_path + self.Tu_file_path, delimiter=","))
         self.A = np.atleast_2d(np.genfromtxt(self.matrices_path + "Ac.csv", delimiter=","))
         self.B = np.atleast_2d(np.genfromtxt(self.matrices_path + self.B_file_path, delimiter=",")).reshape(-1,1)
 
         self.A[3,1] = M * cm * 9.81 / (M * cm**2 + self.I[0,0])
         self.B[3,0] *= M * cm / (M * cm**2 + self.I[0,0])
+
+        # normalize A and B matrices
+        self.A = np.linalg.inv(self.Tx) @ self.A @ self.Tx
+        self.B = np.linalg.inv(self.Tx) @ self.B @ self.Tu
 
         self.Q = np.atleast_2d(np.genfromtxt(self.matrices_path + "Qr.csv", delimiter=","))
         self.R = np.atleast_2d(np.genfromtxt(self.matrices_path + "Rr.csv", delimiter=","))
@@ -95,7 +103,7 @@ class StateFeedbackNode:
         self.time = msg.header.stamp
         # msg.vector.reshape(-1,1)
         self.x = subArray(msg)
-        self.u = -self.K @ self.x
+        self.u = -self.Tu @ self.K @ np.linalg.inv(self.Tx) @ self.x
 
         self.v_sp_msg.scalar = self.integrate()
         self.v_pub.publish(self.v_sp_msg)
