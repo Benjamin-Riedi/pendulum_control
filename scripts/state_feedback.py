@@ -53,7 +53,8 @@ class StateFeedbackNode:
             self.K = np.atleast_2d(np.genfromtxt(self.matrices_path + self.K_file_path, delimiter=","))
         else:
             self.K = self.calculate_K()
-        
+        print('K matrix:')
+        print(self.K)
         self.K_full = self.K
 
     def init_topics(self):
@@ -93,10 +94,8 @@ class StateFeedbackNode:
         K, P, E = control.dlqr(Ad, Bd, self.Q, self.R)
 
         # maybe add support to write K to file, but for now i'll just print it
-        print("Calculated K:")
-        print(K)
 
-        return K
+        return self.Tu @ K @ np.linalg.inv(self.Tx)
     
     def callback(self, msg):
         while self.ramp_counter < 400:
@@ -105,7 +104,7 @@ class StateFeedbackNode:
         self.time = msg.header.stamp
         # msg.vector.reshape(-1,1)
         self.x = subArray(msg)
-        self.u = -self.Tu @ self.K @ np.linalg.inv(self.Tx) @ self.x
+        self.u = -self.K @ self.x
 
         self.v_sp_msg.scalar = self.integrate_v()
         self.v_pub.publish(self.v_sp_msg)

@@ -11,7 +11,7 @@
             <param name="kalman_filter" value="false" />
         </node>
         <node pkg="pendulum_control" type="state_feedback.py" name="state_feedback_node_bottom" output="screen">
-            <param name="calculate_gains" value="true" />
+            <param name="calculate_gains" value="false" />
         </node>
     </group>
     <group ns="top">
@@ -19,7 +19,7 @@
             <param name="kalman_filter" value="false" />
         </node>
         <node pkg="pendulum_control" type="state_feedback.py" name="state_feedback_node_top" output="screen">
-            <param name="calculate_gains" value="true" />
+            <param name="calculate_gains" value="false" />
         </node>
     </group>
 

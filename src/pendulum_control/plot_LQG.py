@@ -92,7 +92,7 @@ def plot_velocity(data_frames, root, top):
     plt.show()
 
 def plot_integration(data_frames, root, topics):
-    fig, (axt, axe1, axb, axe2) = plt.subplots(2, 2, sharex=True)
+    fig, ((axt, axe1), (axb, axe2)) = plt.subplots(2, 2, sharex='col')
     for topic, ax in zip(topics, [(axt, axe1), (axb, axe2)]):
         v_sp_u, time_u = extract_scalar(data_frames, topic[0])
         v_sp_v, time_v = extract_scalar(data_frames, topic[1])
@@ -105,6 +105,10 @@ def plot_integration(data_frames, root, topics):
         ax[0].set_ylabel('Setpoint [m/s]')
         ax[0].set_title(topic)
         ax[0].legend()
+    
+    fig.tight_layout()
+    fig.set_size_inches(15, 9)
+    plt.show()
 
 
 def plot_input(data_frames, root, topics):
@@ -296,14 +300,14 @@ def main():
     vsp_topics = [('/top/v_sp', '/top/v_sp_alt'), ('/bottom/v_sp', '/bottom/v_sp_alt')]
     bag_file = find_bag(exp)
     data_frames = bag_to_pd(exp, topic_names)
-    plot_integration(data_frames, exp, vsp_topics)
-    # plot_state(data_frames, exp, topic_names[0:2])
-    # plot_input(data_frames, exp, topic_names[2:4])
-    # plot_angles(data_frames, exp, topic_names[4:6])
+    # plot_integration(data_frames, exp, vsp_topics)
+    plot_angles(data_frames, exp, topic_names[4:6])
+    plot_input(data_frames, exp, topic_names[2:4])
+    plot_state(data_frames, exp, topic_names[0:2])
 
     # plot_output(data_frames, exp, topic_names[0:2])
-    # plot_velocity(data_frames, exp, top=True)
-    # plot_velocity(data_frames, exp, top=False)
+    plot_velocity(data_frames, exp, top=True)
+    plot_velocity(data_frames, exp, top=False)
     if not bag_file:
         return
 
