@@ -64,7 +64,9 @@ class StateFeedbackNode:
     def init_publishers(self):
         self.v_pub = rospy.Publisher(self.v_topic, ScalarStamped, queue_size=1)
         self.u_pub = rospy.Publisher(self.u_topic, ScalarStamped, queue_size=1)
+        self.v_pub_alt = rospy.Publisher('v_sp_alt', ScalarStamped, queue_size=1)
         self.v_sp_msg = ScalarStamped()
+        self.v_sp_alt = ScalarStamped()
         # publish u for introspection?
 
     def init_variables(self):
@@ -105,19 +107,32 @@ class StateFeedbackNode:
         self.x = subArray(msg)
         self.u = -self.Tu @ self.K @ np.linalg.inv(self.Tx) @ self.x
 
-        self.v_sp_msg.scalar = self.integrate()
+        self.v_sp_msg.scalar = self.integrate_v()
         self.v_pub.publish(self.v_sp_msg)
+        
+        self.v_sp_alt.scalar = self.integrate_u()
+        self.v_pub_alt.publish(self.v_sp_alt)
 
         self.u_prev.scalar = self.u
         self.u_prev.header.stamp = self.time
         self.u_pub.publish(self.u_prev)
 
-    def integrate(self):
+        self.v_prev.scalar = self.v_sp_msg.scalar
+        self.v_prev.header.stamp = self.time
+
+    def integrate_u(self):
         if not hasattr(self, 'u_prev'):
             self.u_prev = ScalarStamped(scalar=0.0)
             self.u_prev.header.stamp = self.time - rospy.Duration(0, 10000000)
         dt = (self.time - self.u_prev.header.stamp).to_sec()
         return 0.5 * dt * (self.u + self.u_prev.scalar)
+    
+    def integrate_v(self):
+        if not hasattr(self, 'v_prev'):
+            self.v_prev = ScalarStamped(scalar=0.0)
+            self.v_prev.header.stamp = self.time - rospy.Duration(0,10000000) # maybe use variable self.Ts
+        dt = (self.time - self.v_prev.header.stamp).to_sec()
+        return self.u * dt + self.v_prev.scalar
     
     def run(self):
         rospy.Subscriber(self.state_topic, ArrayStamped, self.callback)
