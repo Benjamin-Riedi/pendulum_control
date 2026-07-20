@@ -91,6 +91,22 @@ def plot_velocity(data_frames, root, top):
         plt.savefig(os.path.join(root, 'velocity_tracking_bottom.png'))
     plt.show()
 
+def plot_integration(data_frames, root, topics):
+    fig, (axt, axe1, axb, axe2) = plt.subplots(2, 2, sharex=True)
+    for topic, ax in zip(topics, [(axt, axe1), (axb, axe2)]):
+        v_sp_u, time_u = extract_scalar(data_frames, topic[0])
+        v_sp_v, time_v = extract_scalar(data_frames, topic[1])
+        error = v_sp_u - v_sp_v
+        ax[0].plot(time_u, v_sp_u, label=topic[0].replace('v_sp', '').strip('/') + ' v_sp_u', color='tab:blue')
+        ax[0].plot(time_v, v_sp_v, label=topic[1].replace('v_sp', '').strip('/') + ' v_sp_v', color='tab:red')
+        ax[1].plot(time_u, error, label='Integration Difference', color='tab:green')
+        ax[1].set_ylabel('Difference [m/s]')
+        ax[0].set_xlabel('Time [s]')
+        ax[0].set_ylabel('Setpoint [m/s]')
+        ax[0].set_title(topic)
+        ax[0].legend()
+
+
 def plot_input(data_frames, root, topics):
     fig, (axt, axb) = plt.subplots(2, 1, sharex=True)
     for topic, ax in zip(topics,[axt, axb]):
@@ -277,12 +293,13 @@ def main():
 
     # topic_names = ['/top/y', '/bottom/y', '/top/v_sp', '/bottom/v_sp', '/ethercat_master/Maxon_Motor_top/reading', '/ethercat_master/Maxon_Motor_bottom/reading']  # replace with your topic name
     topic_names = ['/top/state', '/bottom/state', '/top/u', '/bottom/u', '/top/vicon/phi', '/bottom/vicon/phi', '/top/v_sp', '/bottom/v_sp', '/ethercat_master/Maxon_Motor_top/reading', '/ethercat_master/Maxon_Motor_bottom/reading']  # replace with your topic name
-    
+    vsp_topics = [('/top/v_sp', '/top/v_sp_alt'), ('/bottom/v_sp', '/bottom/v_sp_alt')]
     bag_file = find_bag(exp)
     data_frames = bag_to_pd(exp, topic_names)
-    plot_state(data_frames, exp, topic_names[0:2])
-    plot_input(data_frames, exp, topic_names[2:4])
-    plot_angles(data_frames, exp, topic_names[4:6])
+    plot_integration(data_frames, exp, vsp_topics)
+    # plot_state(data_frames, exp, topic_names[0:2])
+    # plot_input(data_frames, exp, topic_names[2:4])
+    # plot_angles(data_frames, exp, topic_names[4:6])
 
     # plot_output(data_frames, exp, topic_names[0:2])
     # plot_velocity(data_frames, exp, top=True)
