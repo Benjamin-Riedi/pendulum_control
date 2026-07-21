@@ -45,4 +45,31 @@ exp53, i have no idea what i'm doing anymore. r = 0.004 q(phi) = 400: [[ -31.460
 exp54, q(phi) = 300 q(dphi) = 0.38->10: [[-24.03682459 251.19480702 -63.81022358  42.24742762]]
 exp55, q(x) = 0.1, q(dx) = 0.1: [[ -2.11509626 140.5220432   -7.79988918  24.92404475]]
 exp56, r=0.001: [[ -2.44681587 160.80699989  -9.01722939  28.56143933]]
-exp57, K = 0.0,250.0,10.0,50.0, fucking worthless
+exp57, K = 0.0,250.0,10.0,50.0, fucking worthlessd
+
+07.20
+exp58, normalization from jasans paper: [[-21.22276847 175.87273039 -27.55087061  17.74262782]]
+exp59, r = 1->10: [[-7.36385736 72.46452651 -9.94702828  8.93706567]]
+exp60, x_max = 0.06, v_max = 0.5, u_max = 20: [[-29.78082011  68.77215608 -19.25516566  10.92901755]]
+exp61, r = 100: [[-9.67527563 39.89599946 -7.79061181  6.5293081 ]]
+
+omg i found something. my integration is completely shit.
+exp62, r=1000: [[-3.09672439 28.83662599 -3.48573784  4.7685968 ]], the difference is insane
+exp63, q(phi) = 1.5->15 : [[-3.09070589 30.25809601 -3.60862486  4.89912602]]
+exp64, r = 500: [[-4.35295488 33.72924691 -4.63681481  5.38182639]]
+exp65, q(dphi) = 1, q(phi) = 50, q(dx) = 10: [[-3.05192833 38.31117922 -5.58087757  6.04847001]]
+exp66, q(dx) = 1, r =2000:[[-2.18525271 29.95652654 -3.10857426  4.76847749]]
+exp67, q(phi) = 500: [[-2.1481088  43.86444718 -3.94694376  5.8445862 ]]
+exp68, back to the roots q(phi) = 1.5: [[-2.19278164 27.46336226 -2.92990351  4.54799818]]
+exp69, q(phi) = 50: [[-2.18525271 29.95652654 -3.10857426  4.76847749]]
+exp70, just trying shit at this point: K = -10,30,-5,10. this was actually decent. not nearly responsive enough, but just penalizing angle isn't the way i think (although i can't really judge the other runs considering vicon fucked up)
+
+07.21
+exp71: K = [[-10.  40.  -5.  10.]]
+exp72, trying to get less extreme response while keeping angle priority (k * 0.5): [[ -5.  -20.   -2.5  -5. ]]
+exp73, norm of K is in a good range i think perhaps a bit larger. increasing dphi sensitivity: [[ -5.  -20.   -2.5  -10. ]]
+exp74, better angle response, perhaps decrease norm again: K = [[ -5.  -30.   -2.5  -10. ]] getting there
+exp75: K = [[ -5.  -30.   -2.5  -15. ]]
+exp76, increase ratios: [[ -4.  -30.   -2  -15. ]]
+exp77, just penalize angle more ig: [[ -4.  -40.   -2  -15. ]]
+
