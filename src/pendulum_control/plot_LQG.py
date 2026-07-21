@@ -114,7 +114,7 @@ def plot_integration(data_frames, root, topics):
 
 
 def plot_input(data_frames, root, topics):
-    
+    dir_name = os.path.split(root)[-1]
 
     fig, (axt, axb) = plt.subplots(2, 1, sharex=True)
     for topic, ax in zip(topics,[axt, axb]):
