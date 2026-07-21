@@ -7,7 +7,7 @@ M = m_p + m_d
 l = 0.25
 cm = 1/M*(m_p*l + m_d*l/2)
 
-def calculate_inertia():
+def calculate_inertia(m_p, m_d, l, cm):
     x_p = l - cm
     x_d = abs(l/2 - cm)
     I_p = m_p*l**2 *np.array([[1/3, 0, 0],
