@@ -20,6 +20,9 @@ def subArray(msg):
 def bag_to_pd(root, topics):
     """Read specified topics from a rosbag and return a dictionary of pandas DataFrames."""
     bag_file = find_bag(root)
+    if bag_file is None:
+        print(f"No bag file found in {root}, skipping experiment")
+        return None
     bag = rosbag.Bag(bag_file,'r')
     start_time = bag.get_start_time() * 1e9 # convert to ns
 

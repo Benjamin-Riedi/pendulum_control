@@ -43,6 +43,8 @@ def extract_scalar(data_frames, topic):
     return scalar, time
 
 def plot_velocity(data_frames, root, top):
+    dir_name = os.path.split(root)[-1]
+
     if top:
         actualVelocity, time_r = extract_velocity(data_frames, ['/ethercat_master/Maxon_Motor_top/reading'])
         v_sp, time_sp = extract_scalar(data_frames, '/top/v_sp')
@@ -77,7 +79,7 @@ def plot_velocity(data_frames, root, top):
     axv.set_xlabel('Time [s]')
     axv.set_ylabel('Velocity [rpm]')
     axv.legend()
-    axv.set_title('Velocities')
+    axv.set_title(f'Velocities, {dir_name}')
 
     axe.plot(time_r[mask], error, label='Velocity Error', color='tab:green')
     axe.set_xlabel('Time [s]')
@@ -112,6 +114,8 @@ def plot_integration(data_frames, root, topics):
 
 
 def plot_input(data_frames, root, topics):
+    
+
     fig, (axt, axb) = plt.subplots(2, 1, sharex=True)
     for topic, ax in zip(topics,[axt, axb]):
         u, time = extract_scalar(data_frames, topic)
@@ -119,7 +123,7 @@ def plot_input(data_frames, root, topics):
         ax.plot(time, u, label=topic.replace('u', '').strip('/') + ' u', color='tab:blue')
         ax.set_xlabel('Time [s]')
         ax.set_ylabel('Input [m/s^2]')
-        ax.set_title(topic)
+        ax.set_title(f'{topic}, {dir_name}')
         ax.legend()
     fig.tight_layout()
     fig.set_size_inches(15, 9)
@@ -127,6 +131,7 @@ def plot_input(data_frames, root, topics):
     plt.show()
 
 def plot_angles(data_frames, root, topics):
+    dir_name = os.path.split(root)[-1]
     fig, (axt, axb) = plt.subplots(2, 1, sharex=True)
     for topic, ax in zip(topics,[axt, axb]):
         angle, time = extract_scalar(data_frames, topic)
@@ -135,7 +140,7 @@ def plot_angles(data_frames, root, topics):
         ax.plot(time, angle, label=topic.replace('angle', '').strip('/') + ' angle', color='tab:blue')
         ax.set_xlabel('Time [s]')
         ax.set_ylabel('Angle [deg]')
-        ax.set_title(topic)
+        ax.set_title(f'{topic}, {dir_name}')
         ax.legend()
     fig.tight_layout()
     fig.set_size_inches(15, 9)
@@ -143,6 +148,7 @@ def plot_angles(data_frames, root, topics):
     plt.show()
 
 def plot_output(data_frames, root, topics):
+    dir_name = os.path.split(root)[-1]
 
     for topic in topics:
 
@@ -206,11 +212,12 @@ def plot_output(data_frames, root, topics):
 
         fig.tight_layout()
         fig.set_size_inches(15, 9)
-        fig.suptitle(f'Initial State: (x,phi,dx,dphi) = ({x[0]:.2f}m, {phi[0]:.2f}°, {dx[0]:.2f}m/s', fontsize=16) # maybe add degrees for phi and dphi
+        fig.suptitle(f'Initial State ({dir_name}): (x,phi,dx,dphi) = ({x[0]:.2f}m, {phi[0]:.2f}°, {dx[0]:.2f}m/s', fontsize=16) # maybe add degrees for phi and dphi
         plt.savefig(os.path.join(root, topic.replace('y', '').strip('/') + '_output.png'))
         plt.show()
 
 def plot_state(data_frames, root, topics):
+    dir_name = os.path.split(root)[-1]
 
     for topic in topics:
 
@@ -278,7 +285,7 @@ def plot_state(data_frames, root, topics):
 
         fig.tight_layout()
         fig.set_size_inches(15, 9)
-        fig.suptitle(f'Initial State: (x,phi,dx,dphi) = ({x[0]:.2f}m, {phi[0]:.2f}°, {dx[0]:.2f}m/s, {dphi[0]:.2f}°/s)', fontsize=16) # maybe add degrees for phi and dphi
+        fig.suptitle(f'Initial State ({dir_name}): (x,phi,dx,dphi) = ({x[0]:.2f}m, {phi[0]:.2f}°, {dx[0]:.2f}m/s, {dphi[0]:.2f}°/s)', fontsize=16) # maybe add degrees for phi and dphi
         plt.savefig(os.path.join(root, topic.replace('state', '').strip('/') + '_state.png'))
         plt.show()
 
@@ -286,7 +293,7 @@ def main():
     b_all_exps = False
 
     if b_all_exps:
-        exp = '/home/benjamin/tesla_ws/src/pendulum_control/data/exps'
+        exp = '/home/disler/tesla_ws/src/pendulum_control/data/exps'
         for subdir in os.listdir(exp):
             subdir_path = os.path.join(exp, subdir)
             bag_file = find_bag(subdir_path)
@@ -295,10 +302,11 @@ def main():
         exp = os.getcwd()
         bag_file = find_bag(exp)
 
+    if not bag_file:
+        return
     # topic_names = ['/top/y', '/bottom/y', '/top/v_sp', '/bottom/v_sp', '/ethercat_master/Maxon_Motor_top/reading', '/ethercat_master/Maxon_Motor_bottom/reading']  # replace with your topic name
     topic_names = ['/top/state', '/bottom/state', '/top/u', '/bottom/u', '/top/vicon/phi', '/bottom/vicon/phi', '/top/v_sp', '/bottom/v_sp', '/ethercat_master/Maxon_Motor_top/reading', '/ethercat_master/Maxon_Motor_bottom/reading']  # replace with your topic name
     vsp_topics = [('/top/v_sp', '/top/v_sp_alt'), ('/bottom/v_sp', '/bottom/v_sp_alt')]
-    bag_file = find_bag(exp)
     data_frames = bag_to_pd(exp, topic_names)
     # plot_integration(data_frames, exp, vsp_topics)
     plot_angles(data_frames, exp, topic_names[4:6])
@@ -308,8 +316,6 @@ def main():
     # plot_output(data_frames, exp, topic_names[0:2])
     plot_velocity(data_frames, exp, top=True)
     plot_velocity(data_frames, exp, top=False)
-    if not bag_file:
-        return
 
 if __name__ == "__main__":
     main()
