@@ -17,6 +17,14 @@ def subArray(msg):
     array = np.array(msg.vector).reshape(msg.shape)
     return array
 
+def integrate(v_prev, u, dt):
+    """Integrate the input u over time to get the new value of v"""
+    return v_prev + u * dt
+
+def integrate_trapezoidal(v_prev, u, u_prev, dt):
+    """Integrate the input u over time using trapezoidal rule to get the new value of v"""
+    return v_prev + 0.5 * dt * (u + u_prev)
+
 def bag_to_pd(root, topics):
     """Read specified topics from a rosbag and return a dictionary of pandas DataFrames."""
     bag_file = find_bag(root)

@@ -5,7 +5,7 @@ import numpy as np
 import control
 
 from pendulum_control.common import * # this imports the common messages
-from pendulum_control import pubArray, subArray
+from pendulum_control import pubArray, subArray, integrate, integrate_trapezoidal
 from pendulum_control import calculate_inertia, M, cm
 
 class StateFeedbackNode:
@@ -65,15 +65,15 @@ class StateFeedbackNode:
     def init_publishers(self):
         self.v_pub = rospy.Publisher(self.v_topic, ScalarStamped, queue_size=1)
         self.u_pub = rospy.Publisher(self.u_topic, ScalarStamped, queue_size=1)
-        self.v_pub_alt = rospy.Publisher('v_sp_alt', ScalarStamped, queue_size=1)
         self.v_sp_msg = ScalarStamped()
-        self.v_sp_alt = ScalarStamped()
+        self.u_msg = ScalarStamped()
         # publish u for introspection?
 
     def init_variables(self):
         self.u = 0.0
         self.x = np.zeros((4, 1))  # state vector
         self.time = rospy.Time.now()
+        self.v_prev = 0.0
         self.I = calculate_inertia()
         self.ramp_counter = 0
     
@@ -102,36 +102,17 @@ class StateFeedbackNode:
             self.K = self.K_full * (self.ramp_counter / 400.0)
             self.ramp_counter += 1
         self.time = msg.header.stamp
-        # msg.vector.reshape(-1,1)
+
         self.x = subArray(msg)
         self.u = -self.K @ self.x
 
-        self.v_sp_msg.scalar = self.integrate_v()
+        self.v_sp_msg.scalar = integrate(self.v_prev, self.u, self.Ts)
         self.v_pub.publish(self.v_sp_msg)
+        self.v_prev = self.v_sp_msg.scalar
         
-        self.v_sp_alt.scalar = self.integrate_u()
-        self.v_pub_alt.publish(self.v_sp_alt)
-
-        self.u_prev.scalar = self.u
-        self.u_prev.header.stamp = self.time
-        self.u_pub.publish(self.u_prev)
-
-        self.v_prev.scalar = self.v_sp_msg.scalar
-        self.v_prev.header.stamp = self.time
-
-    def integrate_u(self):
-        if not hasattr(self, 'u_prev'):
-            self.u_prev = ScalarStamped(scalar=0.0)
-            self.u_prev.header.stamp = self.time - rospy.Duration(0, 10000000)
-        dt = (self.time - self.u_prev.header.stamp).to_sec()
-        return 0.5 * dt * (self.u + self.u_prev.scalar)
-    
-    def integrate_v(self):
-        if not hasattr(self, 'v_prev'):
-            self.v_prev = ScalarStamped(scalar=0.0)
-            self.v_prev.header.stamp = self.time - rospy.Duration(0,10000000) # maybe use variable self.Ts
-        dt = (self.time - self.v_prev.header.stamp).to_sec()
-        return self.u * dt + self.v_prev.scalar
+        self.u_prev = self.u
+        self.u_msg.scalar = self.u
+        self.u_pub.publish(self.u_msg)
     
     def run(self):
         rospy.Subscriber(self.state_topic, ArrayStamped, self.callback)
