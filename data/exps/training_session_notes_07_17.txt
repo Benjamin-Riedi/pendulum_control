@@ -72,4 +72,5 @@ exp74, better angle response, perhaps decrease norm again: K = [[ -5.  -30.   -2
 exp75: K = [[ -5.  -30.   -2.5  -15. ]]
 exp76, increase ratios: [[ -4.  -30.   -2  -15. ]]
 exp77, just penalize angle more ig: [[ -4.  -40.   -2  -15. ]]
+exp78: [[ -2. -40. -1 -15.]]
 
