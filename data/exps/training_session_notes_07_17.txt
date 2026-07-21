@@ -64,4 +64,12 @@ exp68, back to the roots q(phi) = 1.5: [[-2.19278164 27.46336226 -2.92990351  4.
 exp69, q(phi) = 50: [[-2.18525271 29.95652654 -3.10857426  4.76847749]]
 exp70, just trying shit at this point: K = -10,30,-5,10. this was actually decent. not nearly responsive enough, but just penalizing angle isn't the way i think (although i can't really judge the other runs considering vicon fucked up)
 
+07.21
+exp71: K = [[-10.  40.  -5.  10.]]
+exp72, trying to get less extreme response while keeping angle priority (k * 0.5): [[ -5.  -20.   -2.5  -5. ]]
+exp73, norm of K is in a good range i think perhaps a bit larger. increasing dphi sensitivity: [[ -5.  -20.   -2.5  -10. ]]
+exp74, better angle response, perhaps decrease norm again: K = [[ -5.  -30.   -2.5  -10. ]] getting there
+exp75: K = [[ -5.  -30.   -2.5  -15. ]]
+exp76, increase ratios: [[ -4.  -30.   -2  -15. ]]
+exp77, just penalize angle more ig: [[ -4.  -40.   -2  -15. ]]
 

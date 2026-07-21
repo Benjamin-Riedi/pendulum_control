@@ -18,6 +18,8 @@ top:
     state: "/top/Maxon_Motor/state"
 
 matrices_path: "data/matrices/"
+Tx_matrix: "Tx.csv"
+Tu_matrix: "Tu.csv"
 gelsight:
   rgb: "/gelsight/rgb"
 vicon:

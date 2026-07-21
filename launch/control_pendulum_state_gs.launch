@@ -3,8 +3,7 @@
     <include file="$(find ethercat_ros_configurator)/launch/test_motor_start.launch" />
 
     <include file="$(find ethercat_ros_configurator)/launch/converters.launch" />
-
-    <node pkg="gelsight_ros" type="vicon_downsample.py" name="vicon_angle_publisher" output="screen"/>
+    <include file="$(find gelsight_ros)/launch/gelsight_wo_vicon.launch" />
 
     <group ns="bottom">
         <node pkg="pendulum_control" type="pendulum_master.py" name="pendulum_control_node_bottom" output="screen">
