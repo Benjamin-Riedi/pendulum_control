@@ -1,0 +1,26 @@
+<launch>
+    <rosparam command="load" file="$(find pendulum_control)/config/param_server.yaml" />
+    <include file="$(find ethercat_ros_configurator)/launch/test_motor_start.launch" />
+
+    <include file="$(find ethercat_ros_configurator)/launch/converters.launch" />
+    <include file="$(find gelsight_ros)/launch/gelsight_wo_vicon.launch" />
+
+    <group ns="bottom">
+        <node pkg="pendulum_control" type="pendulum_master.py" name="pendulum_control_node_bottom" output="screen">
+            <param name="kalman_filter" value="false" />
+        </node>
+        <node pkg="pendulum_control" type="state_feedback.py" name="state_feedback_node_bottom" output="screen">
+            <param name="calculate_gains" value="false" />
+        </node>
+    </group>
+    <group ns="top">
+        <node pkg="pendulum_control" type="pendulum_master.py" name="pendulum_control_node_top" output="screen">
+            <param name="kalman_filter" value="false" />
+        </node>
+        <node pkg="pendulum_control" type="state_feedback.py" name="state_feedback_node_top" output="screen">
+            <param name="calculate_gains" value="false" />
+        </node>
+    </group>
+
+    <node pkg="pendulum_control" type="dashboard.py" name="dashboard_node" output="screen"/>
+</launch>
