@@ -203,13 +203,13 @@ def simulation_decoupled(plant):
 
 
 if __name__ == "__main__":
-    z_0_x = np.array([0,np.pi/20,0,0])
-    z_0_y = np.array([0,np.pi/20,0,0])
+    z_0_x = np.array([0,np.deg2rad(10),0,0])
+    z_0_y = np.array([0,np.deg2rad(10),0,0])
     dt = 0.001
     N = int(4/dt)
-    M = 0.006
+    M = 0.074
     m = 0.253
-    L = 0.40
+    L = 0.14
     d = 0.0
     
 

@@ -1,15 +1,14 @@
-# import control
 import rospy
 import numpy as np
 
 from threading import Event, Thread
 from std_srvs.srv import Trigger, TriggerResponse
 from pendulum_control.common import * # this imports the common messages
-from pendulum_control import pubArray, subArray
+from pendulum_control import pubArray, subArray, finite_difference
 
 class InvertedPendulumControlNode:
     def __init__(self):
-        rospy.init_node('inv_pend_node', anonymous=True)
+        rospy.init_node('inv_pend_node')
 
         self.read_ROS_params()
         self.init_topics()
@@ -26,13 +25,7 @@ class InvertedPendulumControlNode:
         """Load parameters from ROS parameter server"""
         self.b_kalman_filter = rospy.get_param("~kalman_filter", True)
         self.Ts = rospy.get_param("/Ts", 0.01)  # sampling time
-        # self.gelsight_angles_topic = rospy.get_param('/topics/gelsight/angles', '/gelsight/angles')
-        # self.gelsight_anglesD_topic = rospy.get_param('/topics/gelsight/anglesD', '/gelsight/anglesD')
-        # self.vicon_angles_topic = rospy.get_param('/topics/vicon/angles', '/vicon/angles')
-        # self.vicon_anglesD_topic = rospy.get_param('/topics/vicon/anglesD', '/vicon/anglesD')
-
-        # self.vicon_state_topic = rospy.get_param('/topics/vicon/state', '/vicon/benjamin_v2/Root')
-        # self.vicon_world_topic = rospy.get_param('/topics/vicon/world', '/vicon/benjamin_v2/World')
+        self.vicon = rospy.get_param("~vicon")  # if true, use vicon for phi and dphi, else use gelsight
 
     def init_variables(self):
         # Actuator
@@ -49,11 +42,6 @@ class InvertedPendulumControlNode:
 
         self.activate = Event()
 
-        # mode
-        self.vicon = True # set to true if phi & d_phi is calculated from vicon, else they come from the sensor
-        # get vicon angle one way or the other and if self.vicon, set the state according to vicon
-        # for validation i'll want the vicon stream regardless. (does something break if vicon is not on?)
-
     def init_topics(self):
         self.gelsight_angle_topic = 'gelsight/phi'
         self.gelsight_angle_vel_topic = 'gelsight/dphi'
@@ -69,9 +57,6 @@ class InvertedPendulumControlNode:
 
     def init_publishers(self):
         """Initialize ROS publishers, initialize message variables"""
-        # self.pub_vicon_anglesD = rospy.Publisher(self.vicon_anglesD_topic, Angles2dStamped, queue_size=10)
-        # self.pub_gelsight_anglesD = rospy.Publisher(self.gelsight_anglesD_topic, Angles2dStamped, queue_size=10)
-
         self.pub_state = rospy.Publisher(self.state_topic, ArrayStamped, queue_size=10)
 
         self.state_msg = ArrayStamped()
@@ -93,16 +78,11 @@ class InvertedPendulumControlNode:
         output = np.array([self.x, self.phi, self.xD]).reshape(-1,1)
         return output
     
-    def finite_difference(self, angle, dt):
-        """Calculate angular velocities using finite difference method"""
-        return (self.phi - angle) / self.Ts
-    
     def callback_sensor(self, msg):
         """Callback function for sensor data (angles)
         Publishes state or measurement depending on whether Kalman filter is used."""
-        old_angle = self.phi
+        phi_prev = self.phi
         self.phi = msg.scalar
-        dt = (msg.header.stamp - self.time).to_sec()
         self.time = msg.header.stamp
 
         if self.b_kalman_filter:
@@ -110,7 +90,7 @@ class InvertedPendulumControlNode:
             pubArray(self.pub_output, output, self.time)
 
         else:
-            self.phiD = self.finite_difference(old_angle, dt)
+            self.phiD = finite_difference(phi_prev, self.phi, self.Ts)
 
             state = self.get_state()
             pubArray(self.pub_state, state, self.time)

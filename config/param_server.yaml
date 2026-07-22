@@ -1,4 +1,5 @@
 bottom:
+  is_bottom: true
   gelsight: "/bottom/gelsight/phi"
   vicon: "/bottom/vicon/phi"
   B_matrix: "Bcb.csv"
@@ -7,7 +8,8 @@ bottom:
     command: "/ethercat_master/Maxon_Motor_bottom/command"
     reading: "/ethercat_master/Maxon_Motor_bottom/reading"
     state: "/bottom/Maxon_Motor/state"
-top:
+top: 
+  is_bottom: false
   B_matrix: "Bct.csv"
   K_matrix: "Kt.csv"
   gelsight: "/top/gelsight/phi"

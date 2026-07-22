@@ -9,6 +9,7 @@
     <group ns="bottom">
         <node pkg="pendulum_control" type="pendulum_master.py" name="pendulum_control_node_bottom" output="screen">
             <param name="kalman_filter" value="false" />
+            <param name="vicon" value="true" />
         </node>
         <node pkg="pendulum_control" type="state_feedback.py" name="state_feedback_node_bottom" output="screen">
             <param name="calculate_gains" value="false" />
@@ -17,6 +18,7 @@
     <group ns="top">
         <node pkg="pendulum_control" type="pendulum_master.py" name="pendulum_control_node_top" output="screen">
             <param name="kalman_filter" value="false" />
+            <param name="vicon" value="true" />
         </node>
         <node pkg="pendulum_control" type="state_feedback.py" name="state_feedback_node_top" output="screen">
             <param name="calculate_gains" value="false" />

@@ -1,8 +1,5 @@
 import rospy
-import rospkg
-import os
 import numpy as np
-import control
 
 from pendulum_control.common import * # this imports the common messages
 from pendulum_control import pubArray, subArray, finite_difference
@@ -12,11 +9,8 @@ from std_srvs.srv import Trigger, TriggerResponse
 class DynamicsSimulatorNode:
     def __init__(self):
         rospy.init_node('dynamics_simulator', anonymous=True)
-        rospack = rospkg.RosPack()
-        self.package_path = rospack.get_path('pendulum_control')
         self.read_params()
         self.init_topics()
-        self.read_matrices()
         self.init_publishers()
         self.count = 0
 
@@ -32,16 +26,9 @@ class DynamicsSimulatorNode:
         ]
 
     def read_params(self):
-        """Read parameters from launch file"""
-        self.matrices_rel = rospy.get_param('/matrices_path')
-        self.Ts = rospy.get_param('/Ts', 0.01)  # Sampling time
-        self.b_matrix = rospy.get_param('B_matrix')
-
-        if os.path.isabs(self.matrices_rel):
-            self.matrices_path = self.matrices_rel
-        else:
-            self.matrices_path = os.path.join(self.package_path, self.matrices_rel)
-
+        """Read parameters from parameter server"""
+        self.Ts = rospy.get_param('/Ts', 0.01)
+        self.b_bottom = rospy.get_param("is_bottom")
     
     def init_publishers(self):
         self.output_pub = rospy.Publisher(self.output_topic, ArrayStamped, queue_size=1)
@@ -53,53 +40,33 @@ class DynamicsSimulatorNode:
         self.u_topic = 'u'
         self.set_state_topic = 'set_state'
         self.motor_state_topic = 'Maxon_Motor/state'
-    
-    def read_matrices(self):
-        """Read matrices from CSV files"""
-        self.A = np.atleast_2d(np.genfromtxt(self.matrices_path + "Ac.csv", delimiter=","))
-        self.B = np.atleast_2d(np.genfromtxt(self.matrices_path + self.b_matrix, delimiter=",")).reshape(-1,1)
-        self.C = np.atleast_2d(np.genfromtxt(self.matrices_path + "Cc.csv", delimiter=","))
-
-        self.Qr = np.atleast_2d(np.genfromtxt(self.matrices_path + "Qr.csv", delimiter=","))
-        self.Rr = np.atleast_2d(np.genfromtxt(self.matrices_path + "Rr.csv", delimiter=","))
-
-        self.Qe = np.atleast_2d(np.genfromtxt(self.matrices_path + "Qe.csv", delimiter=","))
-        self.Re = np.atleast_2d(np.genfromtxt(self.matrices_path + "Re.csv", delimiter=","))
-
-        self.discretize()
-
-    def discretize(self):
-        """Converts continuous-time system matrices to discrete-time"""
-        # no input feedthrough
-        D = np.zeros((3,1))
-
-        sys_c = control.ss(self.A,self.B,self.C,D)
-        sys_d = control.c2d(sys_c, self.Ts)
-
-        self.Ad = sys_d.A
-        self.Bd = sys_d.B
-        self.Cd = sys_d.C
-
-        print("Ad:", self.Ad, "Bd:", self.Bd, "Cd:", self.Cd)
+        self.v_sp_topic = 'v_sp'
 
     def set_state_callback(self, msg):
         """For testing purposes, set the state estimate x to a specific value."""
         self.x = subArray(msg)
-        self.y = np.asarray(self.Cd @ self.x)  # update measurement based on new state
+        self.start = rospy.Time.now()
+        # self.y = np.asarray(self.Cd @ self.x)  # update measurement based on new state
 
         pubArray(self.state_pub, self.x, rospy.Time.now())
-        pubArray(self.output_pub, self.y, rospy.Time.now())
+        # pubArray(self.output_pub, self.y, rospy.Time.now())
     
     def motor_state_callback(self, msg):
         """Callback function to receive motor state"""
         motor_state = msg
         self.x[0] = motor_state.vector[0]  # position
         self.x[2] = motor_state.vector[1]  # velocity
+    
+    def v_sp_callback(self, msg):
+        """Callback function to receive velocity setpoint"""
+        self.x[2] = msg.scalar
 
     def input_callback(self, msg):
         """Callback function to receive control input"""
         self.u = np.array(msg.scalar).reshape(1,1)
-        self.output = self.dynamics_step()
+        self.x = self.pendulum.dynamic_step(self.x, self.u)
+
+        # self.output = self.dynamics_step()
         # print("Output:", self.output)
         # wait to simulate sensor delay
         rospy.sleep(self.Ts)
@@ -126,6 +93,7 @@ class DynamicsSimulatorNode:
         rospy.Subscriber(self.u_topic, ScalarStamped, self.input_callback)
         rospy.Subscriber(self.motor_state_topic, ArrayStamped, self.motor_state_callback)
         rospy.Subscriber(self.set_state_topic, ArrayStamped, self.set_state_callback)
+        rospy.Subscriber(self.v_sp_topic, ScalarStamped, self.v_sp_callback)
         rospy.spin()
 
 if __name__ == '__main__':
