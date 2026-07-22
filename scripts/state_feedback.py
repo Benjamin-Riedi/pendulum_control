@@ -17,7 +17,7 @@ class StateFeedbackNode:
 
         pendulum = PendulumModel(m_p=0.01, m_d=0.065, l=0.25, b_bottom=self.b_bottom, Ts=self.Ts)
         self.lqr = LQRController(pendulum.A, pendulum.B, pendulum.Tx, pendulum.Tu, calculate_gains=self.b_calculate_K)
-        self.integrator = Integrator()
+        self.integrator = Integrator(self.Ts)
 
     def read_params(self):
         self.b_calculate_K = rospy.get_param("~calculate_gains", True)
@@ -48,7 +48,7 @@ class StateFeedbackNode:
         self.x = subArray(msg)
         self.u = self.lqr.step(self.x)
 
-        self.v_sp_msg.scalar = self.integrator.integrate(self.u, self.Ts)
+        self.v_sp_msg.scalar = self.integrator.integrate(self.u)
         self.v_pub.publish(self.v_sp_msg)
         
         self.u_msg.scalar = self.u

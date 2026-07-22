@@ -8,8 +8,8 @@ class PendulumModel:
         self.name = 'bottom' if b_bottom else 'top'
         self.Ts = Ts
         self.pendulum_params(m_p, m_d, l)
-        self.Tx, self.Tu = self.normalization_matrices(x=0.01, phi=30, dx=0.05, dphi=30, u=0.05) # normalization like cristiano
-        self.Tx, self.Tu = self.normalization_matrices(x=0.06, phi=20, dx=0.5, dphi=20, u=20)
+        self.Tx, self.Ty, self.Tu = self.normalization_matrices(x=0.01, phi=30, dx=0.05, dphi=30, u=0.05) # normalization like cristiano
+        self.Tx, self.Ty, self.Tu = self.normalization_matrices(x=0.06, phi=20, dx=0.5, dphi=20, u=20)
 
         # Matrix naming: c is for continuous-time, p is for physical states
 
@@ -51,8 +51,9 @@ class PendulumModel:
     def normalization_matrices(self, x=0.01, phi=30, dx=0.05, dphi=30, u=0.05):
         """Return the normalization matrices Tx and Tu."""
         Tx = np.diag([x, np.deg2rad(phi), dx, 5*np.deg2rad(dphi)])
+        Ty = np.diag([x, np.deg2rad(phi), dx])
         Tu = np.array([[u]])
-        return Tx, Tu
+        return Tx, Ty, Tu
     
     def normalize_matrices(self, A_p, B_p, Tx, Tu):
         """Normalize the A and B matrices using Tx and Tu."""
@@ -68,7 +69,7 @@ class PendulumModel:
     
     def dynamic_step(self, x, u):
         """Compute the dynamics of the pendulum given state x and input u."""
-        return self.A_p @ x + self.B_p @ u
+        return np.asarray(self.A_p @ x + self.B_p @ u)
         
     def calculate_inertia(self, m_p, m_d, l, cm):
         x_p = l - cm

@@ -33,7 +33,7 @@ class LQRController:
     def step(self, x):
         """Compute the control input u based on the current state x."""
         u = -self.K @ x
-        return u
+        return np.asarray(u)
     
     def update_gains(self, req):
         """Update the LQR gains K based on new system matrices and weight matrices."""
@@ -47,12 +47,13 @@ class LQRController:
 # support for direct K would require top/bottom distinction
     
 class Integrator:
-    def __init__(self):
+    def __init__(self, Ts):
         self.v_prev = 0.0
+        self.Ts = Ts
 
-    def integrate(self, u, dt):
+    def integrate(self, u):
         """Integrate the input u over time to get the new value of v"""
-        integral = self.v_prev + u * dt
+        integral = self.v_prev + u * self.Ts
         self.v_prev = integral
         return integral
     
