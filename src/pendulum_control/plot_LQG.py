@@ -134,7 +134,11 @@ def plot_angles(data_frames, root, topics):
     dir_name = os.path.split(root)[-1]
     fig, (axt, axb) = plt.subplots(2, 1, sharex=True)
     for topic, ax in zip(topics,[axt, axb]):
-        angle, time = extract_scalar(data_frames, topic)
+        try:
+            angle, time = extract_scalar(data_frames, topic)
+        except ValueError:
+            print(f"Error extracting data from topic {topic}. Skipping this topic.")
+            continue
         angle = np.rad2deg(angle)
 
         ax.plot(time, angle, label=topic.replace('angle', '').strip('/') + ' angle', color='tab:blue')
@@ -151,10 +155,13 @@ def plot_output(data_frames, root, topics):
     dir_name = os.path.split(root)[-1]
 
     for topic in topics:
+        try:
+            (x, phi, dx), time = extract_array(data_frames, topic)
+        except ValueError:
+            print(f"Error extracting data from topic {topic}. Skipping this topic.")
+            continue
 
         fig, (axx, axd) = plt.subplots(2, 1, sharex=True)
-
-        (x, phi, dx), time = extract_array(data_frames, topic)
         np.rad2deg(phi,out=phi)
 
         colors = ['tab:blue', 'tab:red']
@@ -220,10 +227,13 @@ def plot_state(data_frames, root, topics):
     dir_name = os.path.split(root)[-1]
 
     for topic in topics:
+        try:
+            (x, phi, dx, dphi), time = extract_array(data_frames, topic)
+        except ValueError:
+            print(f"Error extracting data from topic {topic}. Skipping this topic.")
+            continue
 
         fig, (axx, axd) = plt.subplots(2, 1, sharex=True)
-
-        (x, phi, dx, dphi), time = extract_array(data_frames, topic)
         np.rad2deg(phi,out=phi)
         np.rad2deg(dphi,out=dphi)
 
@@ -307,15 +317,15 @@ def main():
     # topic_names = ['/top/y', '/bottom/y', '/top/v_sp', '/bottom/v_sp', '/ethercat_master/Maxon_Motor_top/reading', '/ethercat_master/Maxon_Motor_bottom/reading']  # replace with your topic name
     topic_names = ['/top/state', '/bottom/state', '/top/u', '/bottom/u', '/top/vicon/phi', '/bottom/vicon/phi', '/top/v_sp', '/bottom/v_sp', '/ethercat_master/Maxon_Motor_top/reading', '/ethercat_master/Maxon_Motor_bottom/reading']  # replace with your topic name
     vsp_topics = [('/top/v_sp', '/top/v_sp_alt'), ('/bottom/v_sp', '/bottom/v_sp_alt')]
-    data_frames = bag_to_pd(exp, topic_names)
+    data_frames = bag_to_pd(exp, [])
     # plot_integration(data_frames, exp, vsp_topics)
-    plot_angles(data_frames, exp, topic_names[4:6])
+    # plot_angles(data_frames, exp, topic_names[4:6])
     plot_input(data_frames, exp, topic_names[2:4])
     plot_state(data_frames, exp, topic_names[0:2])
 
     # plot_output(data_frames, exp, topic_names[0:2])
-    plot_velocity(data_frames, exp, top=True)
-    plot_velocity(data_frames, exp, top=False)
+    # plot_velocity(data_frames, exp, top=True)
+    # plot_velocity(data_frames, exp, top=False)
 
 if __name__ == "__main__":
     main()

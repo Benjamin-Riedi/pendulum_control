@@ -5,7 +5,9 @@ import numpy as np
 import control
 
 from pendulum_control.common import * # this imports the common messages
-from pendulum_control import pubArray, subArray
+from pendulum_control import pubArray, subArray, finite_difference
+from pendulum_control.model import PendulumModel
+from std_srvs.srv import Trigger, TriggerResponse
 
 class DynamicsSimulatorNode:
     def __init__(self):
@@ -16,9 +18,18 @@ class DynamicsSimulatorNode:
         self.init_topics()
         self.read_matrices()
         self.init_publishers()
+        self.count = 0
 
-        self.x = np.zeros((self.A.shape[0], 1))  # state vector
+        self.pendulum = PendulumModel(m_p=0.01, m_d=0.065, l=0.25, b_bottom=self.b_bottom, Ts=self.Ts)
+        self.set_gains_proxy = rospy.ServiceProxy('controller/set_gains', SetGains)
+        self.set_state_proxy = rospy.ServiceProxy("state/set", Trigger)
 
+        self.Qs = [
+            [1000, 1, 1, 1]
+        ]
+        self.Rs = [
+            [50]
+        ]
 
     def read_params(self):
         """Read parameters from launch file"""
@@ -92,15 +103,22 @@ class DynamicsSimulatorNode:
         # print("Output:", self.output)
         # wait to simulate sensor delay
         rospy.sleep(self.Ts)
-        pubArray(self.output_pub, self.output, rospy.Time.now())
-        pubArray(self.state_pub, self.x, rospy.Time.now())
+        if (rospy.Time.now() - self.start).to_sec() < 4:
+        # pubArray(self.output_pub, self.output, rospy.Time.now())
+            pubArray(self.state_pub, self.x, rospy.Time.now())
+            return
+        
+        if self.count >= len(self.Qs):
+            rospy.signal_shutdown("Simulation complete. Shutting down.")
+        self.set_gains_proxy(self.Qs[self.count], self.Rs[self.count])
+        self.count += 1
+        self.set_state_proxy()
 
-
-    def dynamics_step(self):
-        """Perform one step of the dynamics simulation"""
-        self.x = np.asarray(self.Ad @ self.x + self.Bd @ self.u)
-        y = self.Cd @ self.x
-        return np.asarray(y)
+    # def dynamics_step(self):
+    #     """Perform one step of the dynamics simulation"""
+    #     self.x = np.asarray(self.Ad @ self.x + self.Bd @ self.u)
+    #     y = self.Cd @ self.x
+    #     return np.asarray(y)
         
 
     def run(self):

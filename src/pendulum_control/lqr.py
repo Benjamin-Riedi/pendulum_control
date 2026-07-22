@@ -29,4 +29,13 @@ class LQRController:
         u = -self.K @ x
         return u
     
+    def update_gains(self, req):
+        """Update the LQR gains K based on new system matrices and weight matrices."""
+        Q = np.diag(req.Q)
+        R = np.diag(req.R)
+        self.K = self.calculate_K(Q, R)
+        print("Updated K:")
+        print(self.K)
+        return SetGainsResponse(success=True)
+
 # support for direct K would require top/bottom distinction

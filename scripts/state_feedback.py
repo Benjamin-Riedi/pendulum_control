@@ -116,6 +116,7 @@ class StateFeedbackNode:
     
     def run(self):
         rospy.Subscriber(self.state_topic, ArrayStamped, self.callback)
+        rospy.Service('controller/set_gains', SetGains, self.lqr.update_gains)
         rospy.spin()
 
 if __name__ == "__main__":
